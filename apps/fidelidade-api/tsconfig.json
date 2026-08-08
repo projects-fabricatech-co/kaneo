@@ -1,0 +1,22 @@
+{
+  "extends": "../../packages/typescript-config/base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    // ESNext + Bundler, not apps/api's CommonJS + Node. This package is
+    // `"type": "module"` and is bundled by esbuild with `--format=esm`, so it
+    // needs `import.meta` (the isMainModule guard in src/index.ts) while still
+    // resolving extensionless relative imports the way the bundler does.
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "sourceMap": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "declaration": false,
+    "declarationMap": false
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

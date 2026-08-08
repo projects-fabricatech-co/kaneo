@@ -1,0 +1,236 @@
+@import "tailwindcss";
+
+/* Autofill: keep the field readable instead of the browser's yellow wash. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--foreground) !important;
+  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+@custom-variant dark (&:is(.dark *));
+
+/* Reduced motion: keep opacity feedback, drop movement (scale/translate) and
+   container morphs. Tailwind v4 scale/translate utilities use the standalone
+   CSS properties, so forcing them here neutralizes entrance/exit movement
+   while transition-property keeps the fade. */
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="popover-popup"],
+  [data-slot="select-popup"],
+  [data-slot="menu-popup"],
+  [data-slot="menu-sub-content"],
+  [data-slot="tooltip-popup"],
+  [data-slot="dialog-popup"],
+  [data-slot="sheet-popup"],
+  [data-slot="toast-popup"] {
+    transition-property: opacity !important;
+  }
+}
+
+@theme inline {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --animate-skeleton: skeleton 2s -1s infinite linear;
+  --font-sans: var(--font-sans);
+  --font-heading: var(--font-heading);
+  --font-mono: var(--font-mono);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning: var(--warning);
+  --color-success-foreground: var(--success-foreground);
+  --color-success: var(--success);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar: var(--sidebar);
+  --color-ring: var(--ring);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-input: var(--input);
+  --color-info-foreground: var(--info-foreground);
+  --color-info: var(--info);
+  --color-foreground: var(--foreground);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive: var(--destructive);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-border: var(--border);
+  --color-background: var(--background);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand: var(--brand);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  @keyframes skeleton {
+    to {
+      background-position: -200% 0;
+    }
+  }
+}
+
+:root {
+  /* No bundled webfonts yet — the system stack keeps first paint instant on the
+     cheap Android phones this app is used on. */
+  --font-sans:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+  --font-heading: var(--font-sans);
+  --font-mono:
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    "Liberation Mono",
+    "Courier New",
+    monospace;
+  --radius: 0.75rem;
+
+  /* Brand: indigo #4F46E5 (= Tailwind indigo-600). */
+  --brand: var(--color-indigo-600);
+  --brand-foreground: var(--color-indigo-700);
+
+  --accent: --alpha(var(--color-indigo-600) / 6%);
+  --accent-foreground: var(--color-indigo-900);
+  --background: var(--color-white);
+  --border: --alpha(var(--color-slate-900) / 9%);
+  --card: var(--color-white);
+  --card-foreground: var(--color-slate-900);
+  --destructive: var(--color-red-500);
+  --destructive-foreground: var(--color-red-700);
+  --foreground: var(--color-slate-900);
+  --info: var(--color-sky-500);
+  --info-foreground: var(--color-sky-700);
+  --input: --alpha(var(--color-slate-900) / 12%);
+  --muted: --alpha(var(--color-slate-900) / 4%);
+  --muted-foreground: var(--color-slate-500);
+  --popover: var(--color-white);
+  --popover-foreground: var(--color-slate-900);
+  --primary: var(--color-indigo-600);
+  --primary-foreground: var(--color-white);
+  --ring: var(--color-indigo-500);
+  --secondary: --alpha(var(--color-indigo-600) / 8%);
+  --secondary-foreground: var(--color-indigo-900);
+  --success: var(--color-emerald-500);
+  --success-foreground: var(--color-emerald-700);
+  --warning: var(--color-amber-500);
+  --warning-foreground: var(--color-amber-700);
+  --chart-1: var(--color-indigo-500);
+  --chart-2: var(--color-teal-500);
+  --chart-3: var(--color-amber-500);
+  --chart-4: var(--color-rose-500);
+  --chart-5: var(--color-sky-600);
+  --sidebar: var(--color-slate-50);
+  --sidebar-foreground: var(--color-slate-600);
+  --sidebar-primary: var(--color-indigo-600);
+  --sidebar-primary-foreground: var(--color-white);
+  --sidebar-accent: --alpha(var(--color-indigo-600) / 8%);
+  --sidebar-accent-foreground: var(--color-indigo-900);
+  --sidebar-border: --alpha(var(--color-slate-900) / 7%);
+  --sidebar-ring: var(--color-indigo-500);
+}
+
+.dark {
+  --brand: var(--color-indigo-400);
+  --brand-foreground: var(--color-indigo-300);
+
+  --accent: --alpha(var(--color-white) / 6%);
+  --accent-foreground: var(--color-slate-100);
+  --background: color-mix(in srgb, var(--color-slate-950) 92%, var(--color-black));
+  --border: --alpha(var(--color-white) / 8%);
+  --card: color-mix(in srgb, var(--background) 96%, var(--color-white));
+  --card-foreground: var(--color-slate-100);
+  --destructive: color-mix(in srgb, var(--color-red-500) 90%, var(--color-white));
+  --destructive-foreground: var(--color-red-400);
+  --foreground: var(--color-slate-100);
+  --info: var(--color-sky-500);
+  --info-foreground: var(--color-sky-400);
+  --input: --alpha(var(--color-white) / 10%);
+  --muted: --alpha(var(--color-white) / 5%);
+  --muted-foreground: var(--color-slate-400);
+  --popover: color-mix(in srgb, var(--background) 96%, var(--color-white));
+  --popover-foreground: var(--color-slate-100);
+  --primary: var(--color-indigo-500);
+  --primary-foreground: var(--color-white);
+  --ring: var(--color-indigo-400);
+  --secondary: --alpha(var(--color-white) / 8%);
+  --secondary-foreground: var(--color-slate-100);
+  --success: var(--color-emerald-500);
+  --success-foreground: var(--color-emerald-400);
+  --warning: var(--color-amber-500);
+  --warning-foreground: var(--color-amber-400);
+  --chart-1: var(--color-indigo-400);
+  --chart-2: var(--color-teal-400);
+  --chart-3: var(--color-amber-400);
+  --chart-4: var(--color-rose-400);
+  --chart-5: var(--color-sky-400);
+  --sidebar: color-mix(in srgb, var(--background) 98%, var(--color-white));
+  --sidebar-foreground: var(--color-slate-400);
+  --sidebar-primary: var(--color-indigo-500);
+  --sidebar-primary-foreground: var(--color-white);
+  --sidebar-accent: --alpha(var(--color-white) / 8%);
+  --sidebar-accent-foreground: var(--color-slate-100);
+  --sidebar-border: --alpha(var(--color-white) / 7%);
+  --sidebar-ring: var(--color-indigo-400);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background font-sans text-foreground antialiased;
+    /* The lojista taps fast at the counter — kill the double-tap zoom delay and
+       the grey tap highlight. */
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-heading font-semibold tracking-tight;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+
+  *::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+}
