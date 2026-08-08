@@ -8,6 +8,13 @@ type SessionUser = {
 };
 
 /**
+ * What `auth.api.getSession` actually resolves to. Better Auth generates this
+ * type from the enabled plugins, so naming it here lets the fixture below cast
+ * once, precisely, instead of reaching for `any`.
+ */
+type SessionResult = Awaited<ReturnType<typeof auth.api.getSession>>;
+
+/**
  * Stubs the session resolver so route tests do not need real cookies. This is
  * the seam `authenticateApiRequest` goes through, so everything above it (the
  * auth gate, storeAccess, requireStoreRole) runs for real.
@@ -35,9 +42,7 @@ export function mockAuthenticatedSession(user: SessionUser) {
       ipAddress: null,
       userAgent: null,
     },
-    // biome-ignore lint/suspicious/noExplicitAny: Better Auth's session return
-    // type carries generated plugin fields we do not need to fabricate here.
-  } as any);
+  } as SessionResult);
 }
 
 export function mockAnonymousSession() {
