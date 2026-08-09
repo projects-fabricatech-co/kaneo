@@ -8,6 +8,7 @@ import {
   customerTable,
   programTable,
   rewardTable,
+  stampTable,
   storeMemberTable,
   storeTable,
   subscriptionTable,
@@ -66,7 +67,7 @@ export async function grantPlan(
  * real controller creates it, so access checks behave identically.
  */
 export async function createStoreOwner(
-  options: { storeName?: string; plan?: PlanId } = {},
+  options: { storeName?: string; plan?: PlanId; timezone?: string } = {},
 ): Promise<{ user: SeededUser; store: SeededStore }> {
   const user = await createUser();
   const suffix = createId().slice(0, 8);
@@ -81,6 +82,10 @@ export async function createStoreOwner(
       ownerUserId: user.id,
       name: options.storeName ?? `Loja ${suffix}`,
       slug: `loja-${suffix}`,
+      // Written out rather than left to the column default: the dashboard
+      // buckets by this value, and a test that says nothing about the timezone
+      // would silently start depending on whatever the default becomes.
+      timezone: options.timezone ?? "America/Sao_Paulo",
     })
     .returning();
 
@@ -183,6 +188,90 @@ export async function seedCustomers(storeId: string, count: number) {
   return db.insert(customerTable).values(rows).returning();
 }
 
+/** The next free cycle for a program/customer pair, so seeded cards never
+ * collide with `cards_program_customer_cycle_unique`. */
+async function nextCycle(programId: string, customerId: string) {
+  const [row] = await db
+    .select({ value: max(cardTable.cycle) })
+    .from(cardTable)
+    .where(
+      and(
+        eq(cardTable.programId, programId),
+        eq(cardTable.customerId, customerId),
+      ),
+    );
+
+  return Number(row?.value ?? 0) + 1;
+}
+
+/**
+ * A card in a chosen state, seeded DIRECTLY.
+ *
+ * The dashboard's "quase lá" tile is about cards sitting at 8/10 and 9/10, and
+ * stamping one there through the API would test `create-stamp` eight times over
+ * instead of the counter under test.
+ */
+export async function createCard(
+  storeId: string,
+  programId: string,
+  customerId: string,
+  overrides: Partial<typeof cardTable.$inferInsert> = {},
+) {
+  const [card] = await db
+    .insert(cardTable)
+    .values({
+      storeId,
+      programId,
+      customerId,
+      cycle: overrides.cycle ?? (await nextCycle(programId, customerId)),
+      stampsRequired: overrides.stampsRequired ?? 10,
+      ...overrides,
+    })
+    .returning();
+
+  if (!card) {
+    throw new Error("failed to seed card");
+  }
+
+  return card;
+}
+
+/**
+ * A stamp at a CHOSEN instant, seeded DIRECTLY and WITHOUT touching the card's
+ * counter.
+ *
+ * The whole point of the dashboard's day bucketing is where a row falls on the
+ * store's calendar, so a test about the midnight boundary has to place the
+ * instant itself — going through the API would stamp "now", and the assertion
+ * would then depend on what time the suite happens to run.
+ */
+export async function createStamp(
+  card: {
+    id: string;
+    storeId: string;
+    programId: string;
+    customerId: string;
+  },
+  overrides: Partial<typeof stampTable.$inferInsert> = {},
+) {
+  const [stamp] = await db
+    .insert(stampTable)
+    .values({
+      storeId: card.storeId,
+      programId: card.programId,
+      customerId: card.customerId,
+      cardId: card.id,
+      ...overrides,
+    })
+    .returning();
+
+  if (!stamp) {
+    throw new Error("failed to seed stamp");
+  }
+
+  return stamp;
+}
+
 /**
  * A completed card plus the reward it carries, seeded DIRECTLY.
  *
@@ -197,23 +286,13 @@ export async function createRewardWithCard(
   customerId: string,
   overrides: Partial<typeof rewardTable.$inferInsert> = {},
 ) {
-  const [cycleRow] = await db
-    .select({ value: max(cardTable.cycle) })
-    .from(cardTable)
-    .where(
-      and(
-        eq(cardTable.programId, programId),
-        eq(cardTable.customerId, customerId),
-      ),
-    );
-
   const [card] = await db
     .insert(cardTable)
     .values({
       storeId,
       programId,
       customerId,
-      cycle: Number(cycleRow?.value ?? 0) + 1,
+      cycle: await nextCycle(programId, customerId),
       stampsCount: 1,
       stampsRequired: 1,
       status: "completed",
@@ -309,6 +388,42 @@ export async function createCouponRedemption(
     .where(eq(couponTable.id, couponId));
 
   return redemption;
+}
+
+/**
+ * The instant at which a wall-clock offset from TODAY'S local midnight falls, in
+ * `timezone`. `{ hours: 23, minutes: 30 }` is tonight at half past eleven for
+ * that store; `{ days: 1, minutes: 30 }` is half past midnight tomorrow.
+ *
+ * Computed by POSTGRES, not by `Date` arithmetic in the test: writing
+ * `T23:30-03:00` would hardcode "São Paulo is UTC-3", which is the assumption
+ * these tests exist to check rather than something they may lean on.
+ */
+export async function localInstant(
+  timezone: string,
+  offset: { days?: number; hours?: number; minutes?: number } = {},
+): Promise<Date> {
+  // Epoch milliseconds rather than the timestamptz itself: `db.execute` hands
+  // raw driver values back without drizzle's column mappers, so a timestamp
+  // would arrive as Postgres' own text format and have to be re-parsed.
+  const { rows } = await db.execute<{ ms: string }>(sql`
+    select (extract(epoch from (
+      date_trunc('day', now() at time zone ${timezone}::text)
+      + make_interval(
+          days => ${offset.days ?? 0}::int,
+          hours => ${offset.hours ?? 0}::int,
+          mins => ${offset.minutes ?? 0}::int
+        )
+    ) at time zone ${timezone}::text) * 1000)::bigint as ms
+  `);
+
+  const ms = rows[0]?.ms;
+
+  if (ms === undefined) {
+    throw new Error("failed to resolve a local instant");
+  }
+
+  return new Date(Number(ms));
 }
 
 /**

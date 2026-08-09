@@ -9,20 +9,33 @@
  * Phase 6 on, open the upgrade sheet instead of a toast.
  */
 
+/**
+ * The API answers 402 with one of TWO shapes, and both mean "upgrade":
+ *
+ * - `plan_limit_exceeded` — a counted ceiling (stores, customers, team). Carries
+ *   `max` and `used`, so the sheet can say "50 de 50 usados".
+ * - `plan_feature_unavailable` — a boolean feature the plan simply does not
+ *   include (coupons, branding, reports). There is nothing to count.
+ *
+ * Both land in the same error class with `max`/`used` optional, because every
+ * caller asks the same question — "should I open the upgrade sheet?" — and
+ * matching only one of the two strings silently drops the feature case into the
+ * generic-error path.
+ */
 export type PlanLimitPayload = {
-  error: "plan_limit_exceeded";
-  /** Which limit was hit, e.g. "stores". */
+  error: "plan_limit_exceeded" | "plan_feature_unavailable";
+  /** Which limit or feature was hit, e.g. "maxStores" or "coupons". */
   limit: string;
-  max: number;
-  used: number;
+  max?: number;
+  used?: number;
   plan: string;
   message: string;
 };
 
 export class PlanLimitError extends Error {
   readonly limit: string;
-  readonly max: number;
-  readonly used: number;
+  readonly max?: number;
+  readonly used?: number;
   readonly plan: string;
 
   constructor(payload: PlanLimitPayload) {
@@ -51,7 +64,8 @@ function isPlanLimitPayload(value: unknown): value is PlanLimitPayload {
   if (typeof value !== "object" || value === null) return false;
   const candidate = value as Record<string, unknown>;
   return (
-    candidate.error === "plan_limit_exceeded" &&
+    (candidate.error === "plan_limit_exceeded" ||
+      candidate.error === "plan_feature_unavailable") &&
     typeof candidate.message === "string"
   );
 }

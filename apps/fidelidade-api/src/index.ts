@@ -13,6 +13,7 @@ import card from "./card";
 import code from "./code";
 import coupon from "./coupon";
 import customer from "./customer";
+import dashboard from "./dashboard";
 import db from "./database";
 import program from "./program";
 import publicRoutes from "./public";
@@ -134,6 +135,7 @@ export function createApp() {
   const rewardApi = api.route("/reward", reward);
   const codeApi = api.route("/code", code);
   const couponApi = api.route("/coupon", coupon);
+  const dashboardApi = api.route("/dashboard", dashboard);
 
   app.route("/api", api);
 
@@ -149,6 +151,7 @@ export function createApp() {
     rewardApi,
     codeApi,
     couponApi,
+    dashboardApi,
   };
 }
 
@@ -163,6 +166,7 @@ const {
   rewardApi,
   codeApi,
   couponApi,
+  dashboardApi,
 } = createApp();
 
 /**
@@ -181,7 +185,8 @@ export type AppType =
   | typeof stampApi
   | typeof rewardApi
   | typeof codeApi
-  | typeof couponApi;
+  | typeof couponApi
+  | typeof dashboardApi;
 
 export default app;
 

@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { describeRoute, resolver, validator } from "hono-openapi";
 import * as v from "valibot";
 import {
+  customerHistorySchema,
   customerPageSchema,
   customerSchema,
   findOrCreateCustomerSchema,
@@ -11,6 +12,7 @@ import { storeAccess } from "../utils/store-access-middleware";
 import archiveCustomerCtrl from "./controllers/archive-customer";
 import findOrCreateCustomerCtrl from "./controllers/find-or-create-customer";
 import getCustomerCtrl from "./controllers/get-customer";
+import getCustomerHistoryCtrl from "./controllers/get-customer-history";
 import listCustomersCtrl from "./controllers/list-customers";
 import lookupCustomerCtrl from "./controllers/lookup-customer";
 import rotateCustomerTokenCtrl from "./controllers/rotate-customer-token";
@@ -171,6 +173,32 @@ const customer = new Hono<{
       const { id } = c.req.valid("param");
       const found = await getCustomerCtrl(storeId, id);
       return c.json(found);
+    },
+  )
+  .get(
+    "/:id/history",
+    describeRoute({
+      operationId: "getCustomerHistory",
+      tags: ["Customers"],
+      description:
+        "Cartões, prêmios e cupons de um cliente, com os totais da relação",
+      responses: {
+        200: {
+          description: "Histórico do cliente",
+          content: {
+            "application/json": { schema: resolver(customerHistorySchema) },
+          },
+        },
+        404: { description: "Cliente não encontrado" },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    storeAccess.fromCustomer(),
+    async (c) => {
+      const storeId = c.get("storeId");
+      const { id } = c.req.valid("param");
+      const history = await getCustomerHistoryCtrl(storeId, id);
+      return c.json(history);
     },
   )
   .put(

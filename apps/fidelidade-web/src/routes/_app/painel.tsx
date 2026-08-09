@@ -1,13 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Stamp, Ticket } from "lucide-react";
+import { StampsChart } from "@/components/dashboard/stamps-chart";
+import { StatTiles } from "@/components/dashboard/stat-tiles";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import useDashboard from "@/hooks/queries/dashboard/use-dashboard";
+import useStampsByDay from "@/hooks/queries/dashboard/use-stamps-by-day";
 import useListStores from "@/hooks/queries/store/use-list-stores";
 import { authClient } from "@/lib/auth-client";
 import { copy } from "@/lib/copy";
@@ -17,10 +16,15 @@ export const Route = createFileRoute("/_app/painel")({
   component: PainelRoute,
 });
 
+/** Keys only — the loading grid mirrors the seven tiles so the layout holds still. */
+const SKELETON_TILES = ["a", "b", "c", "d", "e", "f", "g"];
+
 function PainelRoute() {
   const { data: session } = authClient.useSession();
   const { data: stores } = useListStores();
   const { storeId } = useActiveStore();
+  const { data: summary, error: summaryError } = useDashboard(storeId);
+  const { data: days } = useStampsByDay(storeId);
 
   const activeStore = stores?.find((store) => store.id === storeId);
   const firstName = session?.user?.name?.trim().split(/\s+/)[0];
@@ -68,21 +72,31 @@ function PainelRoute() {
         </div>
       </section>
 
-      {/* Filled in by Phase 5 — the tiles need the aggregation endpoints. */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{copy.painel.tilesTitle}</CardTitle>
-          <CardDescription>{copy.painel.tilesPlaceholder}</CardDescription>
-        </CardHeader>
-      </Card>
+      <section className="flex flex-col gap-3">
+        <h2 className="text-sm font-medium">{copy.painel.tilesTitle}</h2>
+        {summaryError ? (
+          <Alert variant="error">
+            <AlertDescription>{copy.painel.error}</AlertDescription>
+          </Alert>
+        ) : summary ? (
+          <StatTiles summary={summary} />
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            {SKELETON_TILES.map((tile) => (
+              <Skeleton key={tile} className="h-24 w-full rounded-xl" />
+            ))}
+          </div>
+        )}
+      </section>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{copy.painel.activityTitle}</CardTitle>
-          <CardDescription>{copy.painel.activityPlaceholder}</CardDescription>
-        </CardHeader>
-        <CardContent />
-      </Card>
+      <section className="flex flex-col gap-3">
+        <h2 className="text-sm font-medium">{copy.painel.chartTitle}</h2>
+        {days ? (
+          <StampsChart days={days} />
+        ) : (
+          <Skeleton className="h-40 w-full rounded-xl" />
+        )}
+      </section>
     </div>
   );
 }

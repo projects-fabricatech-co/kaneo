@@ -330,6 +330,66 @@ describe("API integration: customers", () => {
       expect(noMatchBody.items).toHaveLength(0);
     });
 
+    it("finds a customer from a partial number, without the DDD", async () => {
+      // How people actually give their number at a counter: the last eight or
+      // nine digits, no country code and usually no DDD. Exact-match-only made
+      // the search box on the find-someone screen find nobody.
+      const { user, store } = await createStoreOwner();
+      const joana = await createCustomer(store.id, {
+        name: "Joana Silva",
+        phone: "+5511987654321",
+      });
+      await createCustomer(store.id, {
+        name: "Bruno Costa",
+        phone: "+5511911112222",
+      });
+      mockAuthenticatedSession(user);
+      const { app } = createApp();
+
+      for (const term of ["987654321", "98765-4321", "4321"]) {
+        const response = await app.request(
+          `/api/customer?storeId=${store.id}&q=${encodeURIComponent(term)}`,
+        );
+        const body = (await response.json()) as { items: CustomerRow[] };
+        expect(body.items.map((item) => item.id)).toEqual([joana.id]);
+      }
+    });
+
+    it("ignores a digit run too short to identify anyone", async () => {
+      // "1" appears in nearly every BR number. Matching it would dump the whole
+      // customer base into a list the lojista is scanning for one person.
+      const { user, store } = await createStoreOwner();
+      await createCustomer(store.id, {
+        name: "Joana Silva",
+        phone: "+5511987654321",
+      });
+      mockAuthenticatedSession(user);
+      const { app } = createApp();
+
+      const response = await app.request(
+        `/api/customer?storeId=${store.id}&q=1`,
+      );
+      const body = (await response.json()) as { items: CustomerRow[] };
+      expect(body.items).toHaveLength(0);
+    });
+
+    it("does not let a partial number reach another store's customers", async () => {
+      const { store: theirs } = await createStoreOwner();
+      await createCustomer(theirs.id, {
+        name: "Cliente alheio",
+        phone: "+5511987654321",
+      });
+      const { user: mine, store } = await createStoreOwner();
+      mockAuthenticatedSession(mine);
+      const { app } = createApp();
+
+      const response = await app.request(
+        `/api/customer?storeId=${store.id}&q=987654321`,
+      );
+      const body = (await response.json()) as { items: CustomerRow[] };
+      expect(body.items).toHaveLength(0);
+    });
+
     it("treats a LIKE wildcard as a literal", async () => {
       const { user, store } = await createStoreOwner();
       await createCustomer(store.id, { name: "Ana" });

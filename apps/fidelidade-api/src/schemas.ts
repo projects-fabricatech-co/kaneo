@@ -123,6 +123,65 @@ export const customerPageSchema = v.object({
 });
 
 /**
+ * Everything the lojista sees when they tap a name. Deliberately NOT built out
+ * of `cardSchema` / `rewardSchema` / `couponRedemptionSchema`: those mirror
+ * whole rows, and this is a hand-written projection of the columns the sheet
+ * renders. Spreading the row schemas would ship `redeemedByUserId` and the
+ * denormalized ids to a screen that has no use for them, and would keep doing so
+ * for every column somebody adds later.
+ */
+export const customerHistorySchema = v.object({
+  customer: v.object({
+    id: v.string(),
+    name: v.nullable(v.string()),
+    phone: v.string(),
+  }),
+  cards: v.array(
+    v.object({
+      id: v.string(),
+      programId: v.string(),
+      programName: v.string(),
+      cycle: v.number(),
+      stampsCount: v.number(),
+      stampsRequired: v.number(),
+      status: v.string(),
+      completedAt: v.nullable(v.date()),
+      redeemedAt: v.nullable(v.date()),
+      createdAt: v.date(),
+    }),
+  ),
+  rewards: v.array(
+    v.object({
+      id: v.string(),
+      code: v.string(),
+      description: v.string(),
+      status: v.string(),
+      expiresAt: v.nullable(v.date()),
+      redeemedAt: v.nullable(v.date()),
+      createdAt: v.date(),
+    }),
+  ),
+  coupons: v.array(
+    v.object({
+      id: v.string(),
+      couponId: v.string(),
+      code: v.string(),
+      title: v.string(),
+      discountLabel: v.string(),
+      status: v.string(),
+      expiresAt: v.nullable(v.date()),
+      redeemedAt: v.nullable(v.date()),
+      createdAt: v.date(),
+    }),
+  ),
+  totals: v.object({
+    totalStamps: v.number(),
+    totalRewards: v.number(),
+    totalRedeemed: v.number(),
+  }),
+});
+
+/**
  * `created` is what lets the stamp screen say "novo cliente" without a second
  * round trip — find-or-create is otherwise indistinguishable from a plain find.
  */
@@ -310,6 +369,32 @@ export const couponRedemptionWithCustomerSchema = v.object({
     phone: v.string(),
   }),
 });
+
+// ---------------------------------------------------------------------------
+// The painel
+// ---------------------------------------------------------------------------
+
+/**
+ * Seven integers, never null. Each one is a `count(...)` in `get-dashboard.ts`,
+ * so "nada aconteceu hoje" is the number 0 and not an empty tile.
+ */
+export const dashboardSummarySchema = v.object({
+  stampsToday: v.number(),
+  stampsWeek: v.number(),
+  activeCustomers: v.number(),
+  newCustomersWeek: v.number(),
+  cardsNearGoal: v.number(),
+  pendingRewards: v.number(),
+  couponsActive: v.number(),
+});
+
+/** `day` is `YYYY-MM-DD` on the store's calendar — a label, not an instant. */
+export const stampsByDaySchema = v.array(
+  v.object({
+    day: v.string(),
+    count: v.number(),
+  }),
+);
 
 // ---------------------------------------------------------------------------
 // Cards and stamps

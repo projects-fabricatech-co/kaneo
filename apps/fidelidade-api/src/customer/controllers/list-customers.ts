@@ -61,12 +61,31 @@ async function listCustomers(
   const term = q?.trim();
 
   if (term) {
-    // A phone is matched EXACTLY, after normalization: "11 8765-4321" and
-    // "+5511987654321" are the same person, and a substring match on digits
-    // would be noise.
-    const phone = isValidBrPhone(term) ? normalizeBrPhone(term) : null;
-    const byName = ilike(customerTable.name, `%${escapeLikePattern(term)}%`);
-    const search = phone ? or(eq(customerTable.phone, phone), byName) : byName;
+    // Three ways to find a person, OR'd together, because the lojista is typing
+    // whatever the customer just said out loud.
+    //
+    // 1. A complete number, matched EXACTLY after normalization: "11 8765-4321"
+    //    and "+5511987654321" are the same person.
+    // 2. A PARTIAL run of digits, matched as a substring of the stored E.164.
+    //    People give their number without the DDD ("98888-0001") far more often
+    //    than with it, and exact-match-only turns the search box on the one
+    //    screen whose job is finding someone into a box that finds nobody.
+    //    Four digits minimum, so a stray "1" does not return the whole shop.
+    // 3. The name, as a case-insensitive substring.
+    const digits = term.replace(/\D/g, "");
+    const conditions = [
+      ilike(customerTable.name, `%${escapeLikePattern(term)}%`),
+    ];
+
+    if (isValidBrPhone(term)) {
+      conditions.push(eq(customerTable.phone, normalizeBrPhone(term)));
+    }
+
+    if (digits.length >= 4) {
+      conditions.push(ilike(customerTable.phone, `%${digits}%`));
+    }
+
+    const search = or(...conditions);
 
     if (search) {
       filters.push(search);
