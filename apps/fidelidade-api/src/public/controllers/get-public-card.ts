@@ -1,8 +1,11 @@
 import { and, asc, desc, eq, gt, inArray, isNull, or, sql } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
+import { liveCouponWhere } from "../../coupon/coupon-window";
 import db from "../../database";
 import {
   cardTable,
+  couponRedemptionTable,
+  couponTable,
   customerTable,
   programTable,
   rewardTable,
@@ -57,7 +60,15 @@ export type PublicCardResponse = {
     description: string;
     expiresAt: string | null;
   }[];
-  coupons: never[];
+  coupons: {
+    title: string;
+    description: string | null;
+    discountLabel: string;
+    endsAt: string | null;
+    /** THIS customer's code, or null. Never anybody else's. */
+    myCode: string | null;
+    myCodeExpiresAt: string | null;
+  }[];
 };
 
 /**
@@ -172,6 +183,42 @@ async function getPublicCard(token: string): Promise<PublicCardResponse> {
     )
     .orderBy(asc(rewardTable.createdAt));
 
+  /**
+   * The store's live campaigns, with THIS customer's own code attached when
+   * they have one.
+   *
+   * The join carries `customerId = this customer` INSIDE the ON clause, not in
+   * the WHERE: a campaign the customer has not claimed must still appear (that
+   * is the whole point — it is an invitation), and moving that predicate down to
+   * the WHERE would both hide those campaigns and, far worse, let a stranger's
+   * redemption match. Pending and unexpired only, for the same reason a dead
+   * prize code is not shown: a code that will be refused is worse than none.
+   */
+  const coupons = await db
+    .select({
+      title: couponTable.title,
+      description: couponTable.description,
+      discountLabel: couponTable.discountLabel,
+      endsAt: couponTable.endsAt,
+      myCode: couponRedemptionTable.code,
+      myCodeExpiresAt: couponRedemptionTable.expiresAt,
+    })
+    .from(couponTable)
+    .leftJoin(
+      couponRedemptionTable,
+      and(
+        eq(couponRedemptionTable.couponId, couponTable.id),
+        eq(couponRedemptionTable.customerId, customer.id),
+        eq(couponRedemptionTable.status, "pending"),
+        or(
+          isNull(couponRedemptionTable.expiresAt),
+          gt(couponRedemptionTable.expiresAt, sql`now()`),
+        ),
+      ),
+    )
+    .where(and(eq(couponTable.storeId, customer.storeId), liveCouponWhere()))
+    .orderBy(asc(couponTable.createdAt));
+
   const stampedByCard = new Map<string, string[]>();
 
   for (const row of stampRows) {
@@ -218,9 +265,16 @@ async function getPublicCard(token: string): Promise<PublicCardResponse> {
       description: reward.description,
       expiresAt: reward.expiresAt ? reward.expiresAt.toISOString() : null,
     })),
-    // Phase 4 fills `coupons`. Present and empty from day one so the web client
-    // never branches on its absence.
-    coupons: [],
+    coupons: coupons.map((campaign) => ({
+      title: campaign.title,
+      description: campaign.description,
+      discountLabel: campaign.discountLabel,
+      endsAt: campaign.endsAt ? campaign.endsAt.toISOString() : null,
+      myCode: campaign.myCode,
+      myCodeExpiresAt: campaign.myCodeExpiresAt
+        ? campaign.myCodeExpiresAt.toISOString()
+        : null,
+    })),
   };
 }
 

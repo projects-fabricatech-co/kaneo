@@ -187,7 +187,10 @@ describe("API integration: validating a code", () => {
     });
   });
 
-  it("dispatches on the prefix: P is a prize, C belongs to Phase 4", async () => {
+  it("dispatches on the prefix: P is a prize, C is a coupon", async () => {
+    // The single "Validate code" field accepts whatever the customer shows, and
+    // the two namespaces are kept disjoint by the prefix so one indexed lookup
+    // decides which table to read.
     const { store, program, app } = await seed();
     const { reward } = await rewardFor(store.id, program.id);
 
@@ -200,10 +203,12 @@ describe("API integration: validating a code", () => {
     expect(prize.status).toBe(200);
     await expect(prize.json()).resolves.toMatchObject({ kind: "reward" });
 
+    // A well-formed coupon code that was never issued is looked up against
+    // coupon_redemptions and reported missing — not rejected as unsupported.
     const coupon = await validate(app, { storeId: store.id, code: "CKM4T9P" });
-    expect(coupon.status).toBe(501);
+    expect(coupon.status).toBe(404);
     await expect(coupon.json()).resolves.toMatchObject({
-      error: "coupon_not_available",
+      error: "code_not_found",
     });
   });
 

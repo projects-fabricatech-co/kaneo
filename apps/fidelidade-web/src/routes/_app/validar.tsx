@@ -24,7 +24,7 @@ type Stage =
   | { step: "entering" }
   | { step: "confirming"; validated: ValidatedCode }
   | { step: "unusable"; reason: string }
-  | { step: "done"; description: string };
+  | { step: "done"; description: string; resetCard: boolean };
 
 function ValidarRoute() {
   const { storeId } = useActiveStore();
@@ -85,9 +85,16 @@ function ValidarRoute() {
         storeId,
         code: stage.validated.code,
       });
+
+      // One field, two kinds. The server discriminates on `kind`, and only a
+      // prize resets a stamp card — a coupon has no card behind it.
       setStage({
         step: "done",
-        description: result.reward.description,
+        description:
+          result.kind === "reward"
+            ? result.reward.description
+            : result.coupon.discountLabel,
+        resetCard: result.kind === "reward",
       });
       setCode("");
       toast.success(copy.validate.redeemed);
@@ -114,9 +121,11 @@ function ValidarRoute() {
             <CheckCircle2 aria-hidden="true" className="size-10 text-primary" />
             <p className="text-lg font-semibold">{copy.validate.redeemed}</p>
             <p className="text-sm">{stage.description}</p>
-            <p className="text-sm text-muted-foreground">
-              {copy.validate.cardReset}
-            </p>
+            {stage.resetCard ? (
+              <p className="text-sm text-muted-foreground">
+                {copy.validate.cardReset}
+              </p>
+            ) : null}
             <Button variant="outline" onClick={reset} className="mt-1">
               {copy.validate.title}
             </Button>

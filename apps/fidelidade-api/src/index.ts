@@ -11,6 +11,7 @@ import { HTTPException } from "hono/http-exception";
 import { auth } from "./auth";
 import card from "./card";
 import code from "./code";
+import coupon from "./coupon";
 import customer from "./customer";
 import db from "./database";
 import program from "./program";
@@ -132,6 +133,7 @@ export function createApp() {
   const stampApi = api.route("/stamp", stamp);
   const rewardApi = api.route("/reward", reward);
   const codeApi = api.route("/code", code);
+  const couponApi = api.route("/coupon", coupon);
 
   app.route("/api", api);
 
@@ -146,6 +148,7 @@ export function createApp() {
     stampApi,
     rewardApi,
     codeApi,
+    couponApi,
   };
 }
 
@@ -159,6 +162,7 @@ const {
   stampApi,
   rewardApi,
   codeApi,
+  couponApi,
 } = createApp();
 
 /**
@@ -176,7 +180,8 @@ export type AppType =
   | typeof cardApi
   | typeof stampApi
   | typeof rewardApi
-  | typeof codeApi;
+  | typeof codeApi
+  | typeof couponApi;
 
 export default app;
 

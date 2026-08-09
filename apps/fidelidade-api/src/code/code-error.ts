@@ -15,7 +15,7 @@ import { HTTPException } from "hono/http-exception";
  * stable contract; the pt-BR `message` is what the lojista reads out loud.
  */
 function codeError(
-  status: 400 | 404 | 409 | 410 | 501,
+  status: 400 | 404 | 409 | 410,
   body: Record<string, unknown>,
 ): HTTPException {
   return new HTTPException(status, {
@@ -88,22 +88,6 @@ export function codeNotRedeemableError(): HTTPException {
   return codeError(409, {
     error: "code_not_redeemable",
     message: "Não foi possível resgatar este código. Tente de novo.",
-  });
-}
-
-// ── PHASE 4 EXTENSION POINT ────────────────────────────────────────────────
-// Coupon codes (`C` prefix) are a Phase 4 feature. The dispatcher in
-// `code/controllers/*` already routes them here rather than falling through to
-// a crash or, worse, a "código não encontrado" that would send the lojista
-// hunting for a typo in a code that is perfectly valid.
-//
-// When Phase 4 lands, delete this and route the `coupon` kind to the
-// coupon-redemption controllers instead.
-// ───────────────────────────────────────────────────────────────────────────
-export function couponNotAvailableError(): HTTPException {
-  return codeError(501, {
-    error: "coupon_not_available",
-    message: "Cupons ainda não estão disponíveis.",
   });
 }
 

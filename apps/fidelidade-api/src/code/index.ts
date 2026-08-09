@@ -47,7 +47,6 @@ const code = new Hono<{
         },
         400: { description: "Código inválido" },
         404: { description: "Código não encontrado nesta loja" },
-        501: { description: "Cupons ainda não estão disponíveis" },
       },
     }),
     validator(
@@ -71,10 +70,10 @@ const code = new Hono<{
       operationId: "redeemCode",
       tags: ["Codes"],
       description:
-        "Resgata um código: entrega o prêmio, encerra o cartão e abre o próximo ciclo",
+        "Resgata um código: um prêmio encerra o cartão e abre o próximo ciclo; um cupom apenas dá baixa no desconto",
       responses: {
         200: {
-          description: "Código resgatado; o próximo cartão já começou",
+          description: "Código resgatado",
           content: {
             "application/json": { schema: resolver(redeemCodeResultSchema) },
           },
@@ -83,7 +82,6 @@ const code = new Hono<{
         404: { description: "Código não encontrado nesta loja" },
         409: { description: "Código já utilizado" },
         410: { description: "Código expirado" },
-        501: { description: "Cupons ainda não estão disponíveis" },
       },
     }),
     validator(

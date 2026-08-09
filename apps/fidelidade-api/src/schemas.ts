@@ -198,6 +198,120 @@ export const validateCodeResultSchema = v.object({
 });
 
 // ---------------------------------------------------------------------------
+// Coupons
+//
+// Declared BEFORE the redemption result below, which embeds both of these: a
+// coupon code redeemed at the counter answers with the campaign it belongs to.
+// ---------------------------------------------------------------------------
+
+/**
+ * `draft` is a campaign the lojista is still writing — it has a link, and that
+ * link 404s until it goes `active`. `archived` ends it without deleting the
+ * history.
+ */
+export const couponStatusSchema = v.picklist([
+  "draft",
+  "active",
+  "archived",
+] as const);
+
+export const discountTypeSchema = v.picklist([
+  "percent",
+  "amount",
+  "freebie",
+] as const);
+
+/**
+ * Percent points for `percent`, CENTAVOS for `amount`, and absent for `freebie`.
+ * The cross-field rule lives in `coupon/discount.ts`, not here: `PUT` applies it
+ * to the merge of the stored row and a partial body, which a body schema cannot
+ * see.
+ */
+export const discountValueSchema = v.pipe(
+  v.number(),
+  v.integer("Informe um número inteiro"),
+  v.minValue(1, "O valor precisa ser maior que zero"),
+  v.maxValue(10_000_000, "Valor muito alto"),
+);
+
+export const maxRedemptionsSchema = v.pipe(
+  v.number(),
+  v.integer("Informe um número inteiro"),
+  v.minValue(1, "O limite precisa ser de pelo menos 1"),
+  v.maxValue(1_000_000, "Limite muito alto"),
+);
+
+export const redemptionValidityDaysSchema = v.pipe(
+  v.number(),
+  v.integer("Informe um número inteiro"),
+  v.minValue(1, "A validade precisa ser de pelo menos 1 dia"),
+  v.maxValue(3650, "A validade pode ser de no máximo 3650 dias"),
+);
+
+/** An ISO instant over JSON, or `null` to clear the field. */
+export const nullableInstantSchema = v.nullable(
+  v.pipe(
+    v.string(),
+    v.isoTimestamp("Data inválida"),
+    v.transform((value) => new Date(value)),
+  ),
+);
+
+export const couponSchema = v.object({
+  id: v.string(),
+  storeId: v.string(),
+  title: v.string(),
+  description: v.nullable(v.string()),
+  discountType: v.string(),
+  discountValue: v.nullable(v.number()),
+  discountLabel: v.string(),
+  /** The campaign's own token: one link and one QR, shared by everybody. */
+  publicToken: v.string(),
+  status: v.string(),
+  startsAt: v.nullable(v.date()),
+  endsAt: v.nullable(v.date()),
+  maxRedemptions: v.nullable(v.number()),
+  redemptionCount: v.number(),
+  redemptionValidityDays: v.number(),
+  createdAt: v.date(),
+  updatedAt: v.date(),
+});
+
+export const couponRedemptionSchema = v.object({
+  id: v.string(),
+  storeId: v.string(),
+  couponId: v.string(),
+  customerId: v.string(),
+  code: v.string(),
+  status: v.string(),
+  expiresAt: v.nullable(v.date()),
+  redeemedAt: v.nullable(v.date()),
+  redeemedByUserId: v.nullable(v.string()),
+  createdAt: v.date(),
+  updatedAt: v.date(),
+});
+
+/**
+ * The lojista's view of who claimed a campaign. Authenticated and store-scoped,
+ * so the customer's name and number belong here — this is the shop's own base.
+ */
+export const couponRedemptionWithCustomerSchema = v.object({
+  id: v.string(),
+  couponId: v.string(),
+  code: v.string(),
+  status: v.string(),
+  expiresAt: v.nullable(v.date()),
+  redeemedAt: v.nullable(v.date()),
+  redeemedByUserId: v.nullable(v.string()),
+  createdAt: v.date(),
+  customer: v.object({
+    id: v.string(),
+    name: v.nullable(v.string()),
+    phone: v.string(),
+  }),
+});
+
+// ---------------------------------------------------------------------------
 // Cards and stamps
 // ---------------------------------------------------------------------------
 
@@ -251,14 +365,31 @@ export const voidStampResultSchema = v.object({
  * `cardSchema`: redeeming closes one cycle and opens the next, and the screen
  * shows both — "prêmio entregue" plus "cartão 2 começou, 0/10".
  */
-export const redeemCodeResultSchema = v.object({
-  kind: codeKindSchema,
+export const redeemRewardResultSchema = v.object({
+  kind: v.literal("reward"),
   reward: rewardSchema,
   /** The cycle that was just closed. */
   card: cardSchema,
   /** The empty card the customer starts filling immediately. */
   nextCard: cardSchema,
 });
+
+/**
+ * A coupon spends flat: no card closes and no cycle opens, because a coupon is
+ * not a cycle. `coupons.redemptionCount` is untouched here — it counted the code
+ * when it was CLAIMED.
+ */
+export const redeemCouponResultSchema = v.object({
+  kind: v.literal("coupon"),
+  redemption: couponRedemptionSchema,
+  coupon: couponSchema,
+});
+
+/** One endpoint, two kinds. The client switches on `kind`. */
+export const redeemCodeResultSchema = v.union([
+  redeemRewardResultSchema,
+  redeemCouponResultSchema,
+]);
 
 // ---------------------------------------------------------------------------
 // The unauthenticated customer card
@@ -307,5 +438,49 @@ export const publicCardSchema = v.object({
       expiresAt: v.nullable(v.string()),
     }),
   ),
-  coupons: v.array(v.never()),
+  /**
+   * The store's live campaigns, plus THIS customer's own code for each one when
+   * they have claimed it. `myCode` is never another customer's code, and no
+   * count, cap or id of the campaign appears here.
+   */
+  coupons: v.array(
+    v.object({
+      title: v.string(),
+      description: v.nullable(v.string()),
+      discountLabel: v.string(),
+      endsAt: v.nullable(v.string()),
+      myCode: v.nullable(v.string()),
+      myCodeExpiresAt: v.nullable(v.string()),
+    }),
+  ),
+});
+
+/**
+ * The campaign landing page: what somebody who scanned the poster sees BEFORE
+ * typing a phone number. Six fields, and the exact allowlist enforced by
+ * `get-public-coupon.ts`.
+ *
+ * `soldOut` is the only thing said about the cap — never `redemptionCount`,
+ * never `maxRedemptions`, and never anything about who else claimed.
+ */
+export const publicCouponSchema = v.object({
+  title: v.string(),
+  description: v.nullable(v.string()),
+  discountLabel: v.string(),
+  endsAt: v.nullable(v.string()),
+  soldOut: v.boolean(),
+  store: v.object({
+    name: v.string(),
+    logoUrl: v.nullable(v.string()),
+    brandColor: v.string(),
+    city: v.nullable(v.string()),
+  }),
+});
+
+/** What the claim hands back: the personal code, and the way home to the card. */
+export const claimPublicCouponSchema = v.object({
+  code: v.string(),
+  expiresAt: v.nullable(v.string()),
+  /** `${FIDELIDADE_CLIENT_URL}/c/<token>` — the customer's own loyalty card. */
+  cardUrl: v.string(),
 });

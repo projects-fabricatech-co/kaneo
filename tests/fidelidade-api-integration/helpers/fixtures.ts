@@ -1,8 +1,10 @@
 import { createId } from "@paralleldrive/cuid2";
-import { and, eq, max } from "drizzle-orm";
+import { and, eq, max, sql } from "drizzle-orm";
 import db from "../../../apps/fidelidade-api/src/database";
 import {
   cardTable,
+  couponRedemptionTable,
+  couponTable,
   customerTable,
   programTable,
   rewardTable,
@@ -241,6 +243,72 @@ export async function createRewardWithCard(
   }
 
   return { card, reward };
+}
+
+/**
+ * A coupon campaign, seeded directly. Defaults to a live one: active, no window
+ * and no cap, so a test only states the thing it is actually about.
+ */
+export async function createCoupon(
+  storeId: string,
+  overrides: Partial<typeof couponTable.$inferInsert> = {},
+) {
+  const suffix = createId().slice(0, 8);
+
+  const [coupon] = await db
+    .insert(couponTable)
+    .values({
+      storeId,
+      title: overrides.title ?? `Campanha ${suffix}`,
+      discountType: overrides.discountType ?? "percent",
+      discountValue:
+        overrides.discountValue === undefined ? 20 : overrides.discountValue,
+      discountLabel: overrides.discountLabel ?? "20% OFF",
+      publicToken: overrides.publicToken ?? generatePublicToken(),
+      ...overrides,
+    })
+    .returning();
+
+  if (!coupon) {
+    throw new Error("failed to seed coupon");
+  }
+
+  return coupon;
+}
+
+/**
+ * A claimed coupon code, seeded DIRECTLY — including `redemption_count`, which
+ * the real claim path maintains. Tests about REDEEMING a code need one in a
+ * given state (expired, spent, another store's) without re-testing the claim.
+ * The claim path itself is covered end-to-end in `coupon-claim.test.ts`.
+ */
+export async function createCouponRedemption(
+  storeId: string,
+  couponId: string,
+  customerId: string,
+  overrides: Partial<typeof couponRedemptionTable.$inferInsert> = {},
+) {
+  const [redemption] = await db
+    .insert(couponRedemptionTable)
+    .values({
+      storeId,
+      couponId,
+      customerId,
+      code: generateShortCode("coupon"),
+      ...overrides,
+    })
+    .returning();
+
+  if (!redemption) {
+    throw new Error("failed to seed coupon redemption");
+  }
+
+  await db
+    .update(couponTable)
+    .set({ redemptionCount: sql`${couponTable.redemptionCount} + 1` })
+    .where(eq(couponTable.id, couponId));
+
+  return redemption;
 }
 
 /**

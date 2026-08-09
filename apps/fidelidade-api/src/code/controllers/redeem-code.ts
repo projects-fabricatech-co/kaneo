@@ -1,8 +1,11 @@
+import redeemCouponRedemptionCtrl, {
+  type RedeemCouponRedemptionResult,
+} from "../../coupon/controllers/redeem-coupon-redemption";
 import redeemRewardCtrl, {
   type RedeemRewardResult,
 } from "../../reward/controllers/redeem-reward";
 import { codeKindFromCode } from "../../utils/short-code";
-import { couponNotAvailableError, invalidCodeError } from "../code-error";
+import { invalidCodeError } from "../code-error";
 
 export type RedeemCodeInput = {
   storeId: string;
@@ -10,12 +13,18 @@ export type RedeemCodeInput = {
   redeemedByUserId: string;
 };
 
-export type RedeemCodeResult = RedeemRewardResult;
+export type RedeemCodeResult =
+  | RedeemRewardResult
+  | RedeemCouponRedemptionResult;
 
 /**
  * The write half of the single "Validar código" input, and the only place a code
  * is ever spent. Same dispatch as `validate-code`, so a code that validated
  * cannot fail here for being the wrong kind.
+ *
+ * Both branches spend with one conditional UPDATE against their own table and
+ * raise the same 404/409/410 bodies, so the counter screen handles failure
+ * identically whichever kind was typed.
  */
 async function redeemCode(input: RedeemCodeInput): Promise<RedeemCodeResult> {
   const kind = codeKindFromCode(input.code);
@@ -24,14 +33,8 @@ async function redeemCode(input: RedeemCodeInput): Promise<RedeemCodeResult> {
     return redeemRewardCtrl(input);
   }
 
-  // ── PHASE 4 EXTENSION POINT ──────────────────────────────────────────────
-  // Phase 4 replaces this branch with `redeemCouponRedemption(input)`, which
-  // owns its own conditional UPDATE against `coupon_redemptions` — the same
-  // one-statement pattern as `redeem-reward.ts`, against
-  // `coupon_redemptions_store_code_unique`.
-  // ─────────────────────────────────────────────────────────────────────────
   if (kind === "coupon") {
-    throw couponNotAvailableError();
+    return redeemCouponRedemptionCtrl(input);
   }
 
   throw invalidCodeError();

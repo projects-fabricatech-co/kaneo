@@ -5,6 +5,8 @@ import { createApp } from "../../apps/fidelidade-api/src/index";
 import { mockAuthenticatedSession } from "./helpers/auth";
 import { resetTestDatabase } from "./helpers/database";
 import {
+  createCoupon,
+  createCouponRedemption,
   createCustomer,
   createProgram,
   createRewardWithCard,
@@ -330,18 +332,165 @@ describe("API integration: redeeming a code", () => {
     });
   });
 
-  it("tells the lojista coupons are not available yet instead of crashing", async () => {
-    // Phase 4 owns `C` codes. Until then a perfectly valid coupon code must not
-    // come back as "não encontrado", which would send the lojista hunting for a
-    // typo that is not there.
-    const { store } = await seed();
-    const { app } = createApp();
+  /**
+   * `C` codes spend through the same endpoint and the same conditional UPDATE,
+   * against `coupon_redemptions` instead of `rewards`. The failure bodies are
+   * identical by design: the counter screen must not care which kind was typed.
+   */
+  describe("coupon codes", () => {
+    async function seedCouponCode(
+      storeId: string,
+      overrides: Parameters<typeof createCouponRedemption>[3] = {},
+      couponOverrides: Parameters<typeof createCoupon>[1] = {},
+    ) {
+      const coupon = await createCoupon(storeId, {
+        title: "Semana do Cliente",
+        discountLabel: "20% OFF",
+        ...couponOverrides,
+      });
+      const customer = await createCustomer(storeId, { name: "Joana" });
+      const redemption = await createCouponRedemption(
+        storeId,
+        coupon.id,
+        customer.id,
+        overrides,
+      );
 
-    const response = await redeem(app, { storeId: store.id, code: "CKM4T9P" });
+      return { coupon, customer, redemption };
+    }
 
-    expect(response.status).toBe(501);
-    await expect(response.json()).resolves.toMatchObject({
-      error: "coupon_not_available",
+    it("spends a coupon code once, and refuses the second attempt", async () => {
+      const { user, store } = await createStoreOwner({ plan: "essencial" });
+      const { coupon, redemption } = await seedCouponCode(store.id);
+      mockAuthenticatedSession(user);
+      const { app } = createApp();
+
+      const first = await redeem(app, {
+        storeId: store.id,
+        code: redemption.code,
+      });
+      expect(first.status).toBe(200);
+
+      const body = (await first.json()) as {
+        kind: string;
+        redemption: { id: string; status: string; redeemedAt: string | null };
+        coupon: { id: string; discountLabel: string };
+      };
+
+      expect(body.kind).toBe("coupon");
+      expect(body.redemption).toMatchObject({
+        id: redemption.id,
+        status: "redeemed",
+      });
+      expect(body.redemption.redeemedAt).not.toBeNull();
+      expect(body.coupon).toMatchObject({
+        id: coupon.id,
+        discountLabel: "20% OFF",
+      });
+
+      const persisted = await db.query.couponRedemptionTable.findFirst({
+        where: eq(schema.couponRedemptionTable.id, redemption.id),
+      });
+      expect(persisted?.status).toBe("redeemed");
+      expect(persisted?.redeemedByUserId).toBe(user.id);
+
+      // The campaign's counter is untouched: it counted the code when it was
+      // CLAIMED, not when it was spent.
+      const campaign = await db.query.couponTable.findFirst({
+        where: eq(schema.couponTable.id, coupon.id),
+      });
+      expect(campaign?.redemptionCount).toBe(1);
+
+      const second = await redeem(app, {
+        storeId: store.id,
+        code: redemption.code,
+      });
+      expect(second.status).toBe(409);
+      await expect(second.json()).resolves.toMatchObject({
+        error: "code_already_redeemed",
+      });
+    });
+
+    it("lets exactly one of two simultaneous redemptions through", async () => {
+      const { user, store } = await createStoreOwner({ plan: "essencial" });
+      const { redemption } = await seedCouponCode(store.id);
+      mockAuthenticatedSession(user);
+      const { app } = createApp();
+
+      const responses = await Promise.all([
+        redeem(app, { storeId: store.id, code: redemption.code }),
+        redeem(app, { storeId: store.id, code: redemption.code }),
+      ]);
+
+      expect(responses.map((response) => response.status).sort()).toEqual([
+        200, 409,
+      ]);
+    });
+
+    it("refuses an expired coupon code with 410 and leaves it pending", async () => {
+      const { user, store } = await createStoreOwner({ plan: "essencial" });
+      const { redemption } = await seedCouponCode(store.id, {
+        expiresAt: new Date(Date.now() - 60_000),
+      });
+      mockAuthenticatedSession(user);
+      const { app } = createApp();
+
+      const response = await redeem(app, {
+        storeId: store.id,
+        code: redemption.code,
+      });
+
+      expect(response.status).toBe(410);
+      await expect(response.json()).resolves.toMatchObject({
+        error: "code_expired",
+      });
+
+      const persisted = await db.query.couponRedemptionTable.findFirst({
+        where: eq(schema.couponRedemptionTable.id, redemption.id),
+      });
+      expect(persisted?.status).toBe("pending");
+      expect(persisted?.redeemedAt).toBeNull();
+    });
+
+    it("404s store B's coupon code inside store A, and never spends it", async () => {
+      const a = await createStoreOwner({ plan: "essencial" });
+      const b = await createStoreOwner({ plan: "essencial" });
+      const { redemption } = await seedCouponCode(b.store.id);
+
+      mockAuthenticatedSession(a.user);
+      const { app } = createApp();
+
+      const response = await redeem(app, {
+        storeId: a.store.id,
+        code: redemption.code,
+      });
+
+      expect(response.status).toBe(404);
+      await expect(response.json()).resolves.toMatchObject({
+        error: "code_not_found",
+      });
+
+      const untouched = await db.query.couponRedemptionTable.findFirst({
+        where: eq(schema.couponRedemptionTable.id, redemption.id),
+      });
+      expect(untouched?.status).toBe("pending");
+      expect(untouched?.redeemedAt).toBeNull();
+    });
+
+    it("404s a coupon code that does not exist", async () => {
+      const { user, store } = await createStoreOwner({ plan: "essencial" });
+      mockAuthenticatedSession(user);
+      const { app } = createApp();
+
+      const response = await redeem(app, {
+        storeId: store.id,
+        code: "CZZZZZZ",
+      });
+
+      expect(response.status).toBe(404);
+      await expect(response.json()).resolves.toMatchObject({
+        error: "code_not_found",
+      });
     });
   });
 
