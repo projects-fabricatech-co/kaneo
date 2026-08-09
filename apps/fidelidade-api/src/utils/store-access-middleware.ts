@@ -4,7 +4,7 @@ import { HTTPException } from "hono/http-exception";
 import db, { schema } from "../database";
 import { validateStoreAccess } from "./validate-store-access";
 
-type LookupResource = "program" | "customer" | "card" | "coupon";
+type LookupResource = "program" | "customer" | "card" | "coupon" | "stamp";
 
 type StoreIdSource =
   | { type: "query"; key: string }
@@ -71,6 +71,15 @@ async function lookupStoreId(
           .select({ storeId: schema.couponTable.storeId })
           .from(schema.couponTable)
           .where(eq(schema.couponTable.id, id))
+          .limit(1);
+        return row?.storeId || null;
+      }
+
+      case "stamp": {
+        const [row] = await db
+          .select({ storeId: schema.stampTable.storeId })
+          .from(schema.stampTable)
+          .where(eq(schema.stampTable.id, id))
           .limit(1);
         return row?.storeId || null;
       }
@@ -176,5 +185,10 @@ export const storeAccess = {
   fromCoupon: (idKey = "id") =>
     storeAccessMiddleware({
       sources: [{ type: "lookup", resource: "coupon", idKey }],
+    }),
+
+  fromStamp: (idKey = "id") =>
+    storeAccessMiddleware({
+      sources: [{ type: "lookup", resource: "stamp", idKey }],
     }),
 };

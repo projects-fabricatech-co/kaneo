@@ -1,12 +1,15 @@
 import { createId } from "@paralleldrive/cuid2";
 import db from "../../../apps/fidelidade-api/src/database";
 import {
+  customerTable,
+  programTable,
   storeMemberTable,
   storeTable,
   subscriptionTable,
   userTable,
 } from "../../../apps/fidelidade-api/src/database/schema";
 import type { PlanId } from "../../../apps/fidelidade-api/src/plans/limits";
+import { generatePublicToken } from "../../../apps/fidelidade-api/src/utils/tokens";
 
 type SeededUser = typeof userTable.$inferSelect;
 type SeededStore = typeof storeTable.$inferSelect;
@@ -99,6 +102,79 @@ export async function createStoreCashier(storeId: string): Promise<SeededUser> {
   });
 
   return user;
+}
+
+let subscriberCounter = 900000000;
+
+/** Distinct, valid 9-digit mobile subscriber numbers, in seed order. */
+function nextSubscriber(): string {
+  subscriberCounter += 1;
+  return String(subscriberCounter);
+}
+
+/**
+ * A loyalty program, seeded directly. `cooldownMinutes: 0` is the usual choice in
+ * tests that stamp repeatedly — the cooldown itself is exercised on purpose in
+ * `stamp-concurrency.test.ts`.
+ */
+export async function createProgram(
+  storeId: string,
+  overrides: Partial<typeof programTable.$inferInsert> = {},
+) {
+  const suffix = createId().slice(0, 8);
+
+  const [program] = await db
+    .insert(programTable)
+    .values({
+      storeId,
+      name: overrides.name ?? `Programa ${suffix}`,
+      rewardDescription: overrides.rewardDescription ?? "Um café grátis",
+      ...overrides,
+    })
+    .returning();
+
+  if (!program) {
+    throw new Error("failed to seed program");
+  }
+
+  return program;
+}
+
+/** Phones are seeded already normalized, exactly as the controller stores them. */
+export async function createCustomer(
+  storeId: string,
+  overrides: Partial<typeof customerTable.$inferInsert> = {},
+) {
+  const [customer] = await db
+    .insert(customerTable)
+    .values({
+      storeId,
+      phone: overrides.phone ?? `+5511${nextSubscriber()}`,
+      publicToken: overrides.publicToken ?? generatePublicToken(),
+      ...overrides,
+    })
+    .returning();
+
+  if (!customer) {
+    throw new Error("failed to seed customer");
+  }
+
+  return customer;
+}
+
+/** Fills a store up to `count` customers, to sit right under a plan ceiling. */
+export async function seedCustomers(storeId: string, count: number) {
+  const rows = Array.from({ length: count }, () => ({
+    storeId,
+    phone: `+5511${nextSubscriber()}`,
+    publicToken: generatePublicToken(),
+  }));
+
+  if (rows.length === 0) {
+    return [];
+  }
+
+  return db.insert(customerTable).values(rows).returning();
 }
 
 /**

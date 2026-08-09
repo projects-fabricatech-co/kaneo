@@ -9,7 +9,12 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import { auth } from "./auth";
+import card from "./card";
+import customer from "./customer";
 import db from "./database";
+import program from "./program";
+import publicRoutes from "./public";
+import stamp from "./stamp";
 import store from "./store";
 import { authenticateApiRequest } from "./utils/authenticate-api-request";
 
@@ -97,6 +102,10 @@ export function createApp() {
     throw new HTTPException(404, { message: "Not found" });
   });
 
+  // The customer's own card, opened from a link or a QR code. Unauthenticated by
+  // design, so its controller projects an explicit allowlist of fields.
+  const publicApi = api.route("/public", publicRoutes);
+
   // ───────────────────────────────────────────────────────────────────────────
   // Auth gate. Everything registered AFTER this line requires a session.
   // ───────────────────────────────────────────────────────────────────────────
@@ -115,15 +124,42 @@ export function createApp() {
   });
 
   const storeApi = api.route("/store", store);
+  const programApi = api.route("/program", program);
+  const customerApi = api.route("/customer", customer);
+  const cardApi = api.route("/card", card);
+  const stampApi = api.route("/stamp", stamp);
 
   app.route("/api", api);
 
-  return { app, api, storeApi };
+  return {
+    app,
+    api,
+    publicApi,
+    storeApi,
+    programApi,
+    customerApi,
+    cardApi,
+    stampApi,
+  };
 }
 
-const { app, storeApi } = createApp();
+const { app, publicApi, storeApi, programApi, customerApi, cardApi, stampApi } =
+  createApp();
 
-export type AppType = typeof storeApi;
+/**
+ * A UNION, not an intersection, and each member has to come from its own `const`.
+ * `api.route()` returns a Hono typed with only the schema of the router that call
+ * registered, so capturing every call and unioning them is what gives the web
+ * client's `hc<AppType>` a complete map of the API. Dropping a member here does
+ * not fail to compile — it silently deletes those routes from the client's types.
+ */
+export type AppType =
+  | typeof publicApi
+  | typeof storeApi
+  | typeof programApi
+  | typeof customerApi
+  | typeof cardApi
+  | typeof stampApi;
 
 export default app;
 

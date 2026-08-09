@@ -52,3 +52,167 @@ export const slugSchema = v.pipe(
   v.maxLength(64, "Slug muito longo"),
   v.regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug inválido"),
 );
+
+// ---------------------------------------------------------------------------
+// Programs
+// ---------------------------------------------------------------------------
+
+export const programStatusSchema = v.picklist(["active", "archived"] as const);
+
+/**
+ * The goal is capped at 100 and the cooldown at 24h so a typo cannot create a
+ * card nobody can ever finish, or lock a customer out for a decade.
+ */
+export const stampsRequiredSchema = v.pipe(
+  v.number(),
+  v.integer("Informe um número inteiro"),
+  v.minValue(1, "O cartão precisa de pelo menos 1 carimbo"),
+  v.maxValue(100, "O cartão pode ter no máximo 100 carimbos"),
+);
+
+export const cooldownMinutesSchema = v.pipe(
+  v.number(),
+  v.integer("Informe um número inteiro"),
+  v.minValue(0, "O intervalo não pode ser negativo"),
+  v.maxValue(1440, "O intervalo pode ser de no máximo 1440 minutos"),
+);
+
+export const rewardValidityDaysSchema = v.pipe(
+  v.number(),
+  v.integer("Informe um número inteiro"),
+  v.minValue(1, "A validade precisa ser de pelo menos 1 dia"),
+  v.maxValue(3650, "A validade pode ser de no máximo 3650 dias"),
+);
+
+export const programSchema = v.object({
+  id: v.string(),
+  storeId: v.string(),
+  name: v.string(),
+  stampsRequired: v.number(),
+  rewardDescription: v.string(),
+  rewardValidityDays: v.number(),
+  cooldownMinutes: v.number(),
+  cardColor: v.string(),
+  cardTextColor: v.string(),
+  logoUrl: v.nullable(v.string()),
+  status: v.string(),
+  createdAt: v.date(),
+  updatedAt: v.date(),
+});
+
+// ---------------------------------------------------------------------------
+// Customers
+// ---------------------------------------------------------------------------
+
+export const customerSchema = v.object({
+  id: v.string(),
+  storeId: v.string(),
+  name: v.nullable(v.string()),
+  phone: v.string(),
+  publicToken: v.string(),
+  notes: v.nullable(v.string()),
+  lastStampAt: v.nullable(v.date()),
+  createdAt: v.date(),
+  updatedAt: v.date(),
+  archivedAt: v.nullable(v.date()),
+});
+
+export const customerPageSchema = v.object({
+  items: v.array(customerSchema),
+  nextCursor: v.nullable(v.string()),
+});
+
+/**
+ * `created` is what lets the stamp screen say "novo cliente" without a second
+ * round trip — find-or-create is otherwise indistinguishable from a plain find.
+ */
+export const findOrCreateCustomerSchema = v.object({
+  customer: customerSchema,
+  created: v.boolean(),
+});
+
+// ---------------------------------------------------------------------------
+// Cards and stamps
+// ---------------------------------------------------------------------------
+
+export const cardSchema = v.object({
+  id: v.string(),
+  storeId: v.string(),
+  programId: v.string(),
+  customerId: v.string(),
+  cycle: v.number(),
+  stampsCount: v.number(),
+  stampsRequired: v.number(),
+  status: v.string(),
+  completedAt: v.nullable(v.date()),
+  redeemedAt: v.nullable(v.date()),
+  createdAt: v.date(),
+  updatedAt: v.date(),
+});
+
+export const stampSourceSchema = v.picklist(["manual", "qr"] as const);
+
+export const stampSchema = v.object({
+  id: v.string(),
+  storeId: v.string(),
+  programId: v.string(),
+  customerId: v.string(),
+  cardId: v.string(),
+  createdByUserId: v.nullable(v.string()),
+  source: v.string(),
+  idempotencyKey: v.nullable(v.string()),
+  voidedAt: v.nullable(v.date()),
+  voidedByUserId: v.nullable(v.string()),
+  createdAt: v.date(),
+});
+
+export const stampResultSchema = v.object({
+  stamp: stampSchema,
+  card: cardSchema,
+  /** True when the idempotency key had already been used: nothing was created. */
+  replayed: v.boolean(),
+});
+
+export const voidStampResultSchema = v.object({
+  stamp: stampSchema,
+  card: cardSchema,
+});
+
+// ---------------------------------------------------------------------------
+// The unauthenticated customer card
+// ---------------------------------------------------------------------------
+
+/**
+ * Mirrors the allowlist projection in `get-public-card.ts`. Anything not listed
+ * here must not reach an unauthenticated caller — no ids, no raw phone, no
+ * staff attribution, nothing about the store's other customers.
+ */
+export const publicCardSchema = v.object({
+  token: v.string(),
+  store: v.object({
+    name: v.string(),
+    logoUrl: v.nullable(v.string()),
+    brandColor: v.string(),
+    city: v.nullable(v.string()),
+    whatsapp: v.nullable(v.string()),
+  }),
+  customer: v.object({
+    firstName: v.nullable(v.string()),
+    phoneMasked: v.string(),
+  }),
+  cards: v.array(
+    v.object({
+      programName: v.string(),
+      rewardDescription: v.string(),
+      stampsCount: v.number(),
+      stampsRequired: v.number(),
+      cardColor: v.string(),
+      cardTextColor: v.string(),
+      status: v.string(),
+      cycle: v.number(),
+      stampedAt: v.array(v.string()),
+    }),
+  ),
+  rewards: v.array(v.never()),
+  coupons: v.array(v.never()),
+});
