@@ -1,10 +1,24 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CODE_LENGTH, CodeInput } from "./code-input";
+
+/**
+ * Fake timers, and not for convenience: `input-otp` schedules three uncancelled
+ * `setTimeout`s (0/10/50ms) to re-read the caret after every render, and they
+ * setState even after the component unmounted. Under real timers the last of
+ * them lands after Vitest has torn the jsdom environment down, which surfaces as
+ * an unhandled `ReferenceError: window is not defined` and fails the run — a
+ * race that only shows up on a slow machine. Discarding the queue at teardown
+ * removes the race instead of waiting the race out.
+ */
+beforeEach(() => {
+  vi.useFakeTimers();
+});
 
 afterEach(() => {
   cleanup();
   document.body.innerHTML = "";
+  vi.useRealTimers();
 });
 
 function setup(value = "") {
