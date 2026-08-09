@@ -20,6 +20,7 @@ import { Route as AppProgramaRouteImport } from './routes/_app/programa'
 import { Route as AppValidarRouteImport } from './routes/_app/validar'
 import { Route as AuthCadastrarRouteImport } from './routes/auth/cadastrar'
 import { Route as AuthEntrarRouteImport } from './routes/auth/entrar'
+import { Route as CTokenRouteImport } from './routes/c.$token'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -75,6 +76,11 @@ const AuthEntrarRoute = AuthEntrarRouteImport.update({
   path: '/auth/entrar',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CTokenRoute = CTokenRouteImport.update({
+  id: '/c/$token',
+  path: '/c/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -87,6 +93,7 @@ export interface FileRoutesByFullPath {
   '/validar': typeof AppValidarRoute
   '/auth/cadastrar': typeof AuthCadastrarRoute
   '/auth/entrar': typeof AuthEntrarRoute
+  '/c/$token': typeof CTokenRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -99,6 +106,7 @@ export interface FileRoutesByTo {
   '/validar': typeof AppValidarRoute
   '/auth/cadastrar': typeof AuthCadastrarRoute
   '/auth/entrar': typeof AuthEntrarRoute
+  '/c/$token': typeof CTokenRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -113,6 +121,7 @@ export interface FileRoutesById {
   '/_app/validar': typeof AppValidarRoute
   '/auth/cadastrar': typeof AuthCadastrarRoute
   '/auth/entrar': typeof AuthEntrarRoute
+  '/c/$token': typeof CTokenRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -127,6 +136,7 @@ export interface FileRouteTypes {
     | '/validar'
     | '/auth/cadastrar'
     | '/auth/entrar'
+    | '/c/$token'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -139,6 +149,7 @@ export interface FileRouteTypes {
     | '/validar'
     | '/auth/cadastrar'
     | '/auth/entrar'
+    | '/c/$token'
   id:
     | '__root__'
     | '/'
@@ -152,6 +163,7 @@ export interface FileRouteTypes {
     | '/_app/validar'
     | '/auth/cadastrar'
     | '/auth/entrar'
+    | '/c/$token'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -160,6 +172,7 @@ export interface RootRouteChildren {
   OnboardingRoute: typeof OnboardingRoute
   AuthCadastrarRoute: typeof AuthCadastrarRoute
   AuthEntrarRoute: typeof AuthEntrarRoute
+  CTokenRoute: typeof CTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -241,6 +254,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthEntrarRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/c/$token': {
+      id: '/c/$token'
+      path: '/c/$token'
+      fullPath: '/c/$token'
+      preLoaderRoute: typeof CTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -270,6 +290,7 @@ const rootRouteChildren: RootRouteChildren = {
   OnboardingRoute: OnboardingRoute,
   AuthCadastrarRoute: AuthCadastrarRoute,
   AuthEntrarRoute: AuthEntrarRoute,
+  CTokenRoute: CTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
