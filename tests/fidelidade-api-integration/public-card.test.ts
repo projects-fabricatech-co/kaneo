@@ -9,6 +9,7 @@ import { resetTestDatabase } from "./helpers/database";
 import {
   createCustomer,
   createProgram,
+  createRewardWithCard,
   createStoreOwner,
 } from "./helpers/fixtures";
 
@@ -166,9 +167,121 @@ describe("API integration: public card", () => {
       expect(new Date(value).toISOString()).toBe(value);
     }
 
-    // Phase 3 and Phase 4 fill these; they are present and empty from day one.
+    // Three stamps of ten: nothing won yet. Phase 4 fills `coupons`.
     expect(body.rewards).toEqual([]);
     expect(body.coupons).toEqual([]);
+  });
+
+  describe("rewards", () => {
+    async function seedWithReward(
+      overrides: Parameters<typeof createRewardWithCard>[3] = {},
+    ) {
+      const { user, store } = await createStoreOwner({ plan: "pro" });
+      const program = await createProgram(store.id, {
+        stampsRequired: 1,
+        rewardDescription: "10º café grátis",
+      });
+      const customer = await createCustomer(store.id, { name: "Maria" });
+      const { reward } = await createRewardWithCard(
+        store.id,
+        program.id,
+        customer.id,
+        { description: "10º café grátis", ...overrides },
+      );
+
+      mockAnonymousSession();
+
+      return { user, store, program, customer, reward, app: createApp().app };
+    }
+
+    async function fetchRewards(
+      app: ReturnType<typeof createApp>["app"],
+      token: string,
+    ) {
+      const response = await app.request(`/api/public/card/${token}`);
+      const body = (await response.json()) as {
+        rewards: Record<string, unknown>[];
+      };
+      return body.rewards;
+    }
+
+    it("shows a pending code, and exactly three fields of it", async () => {
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      const { customer, reward, app } = await seedWithReward({ expiresAt });
+
+      const rewards = await fetchRewards(app, customer.publicToken);
+
+      expect(rewards).toHaveLength(1);
+      // No id, no status, no cardId: the customer needs the code, what it is
+      // worth, and until when. Nothing else may leave the building.
+      expect(Object.keys(rewards[0] as object).sort()).toEqual([
+        "code",
+        "description",
+        "expiresAt",
+      ]);
+      expect(rewards[0]).toEqual({
+        code: reward.code,
+        description: "10º café grátis",
+        expiresAt: expiresAt.toISOString(),
+      });
+    });
+
+    it("shows a code with no expiry as expiring never", async () => {
+      const { customer, reward, app } = await seedWithReward({
+        expiresAt: null,
+      });
+
+      const rewards = await fetchRewards(app, customer.publicToken);
+
+      expect(rewards).toEqual([
+        {
+          code: reward.code,
+          description: "10º café grátis",
+          expiresAt: null,
+        },
+      ]);
+    });
+
+    it("hides a code that has already been redeemed", async () => {
+      const { customer, reward, app } = await seedWithReward({
+        status: "redeemed",
+        redeemedAt: new Date(),
+      });
+
+      const rewards = await fetchRewards(app, customer.publicToken);
+
+      expect(rewards).toEqual([]);
+      // The row is still there; it is the rendering that withholds it.
+      const persisted = await db.query.rewardTable.findFirst({
+        where: eq(schema.rewardTable.id, reward.id),
+      });
+      expect(persisted?.status).toBe("redeemed");
+    });
+
+    it("hides a code that has expired", async () => {
+      // A dead code on the customer's phone is a person walking in to be told
+      // no. Better that it simply is not there.
+      const { customer, app } = await seedWithReward({
+        expiresAt: new Date(Date.now() - 60_000),
+      });
+
+      const rewards = await fetchRewards(app, customer.publicToken);
+
+      expect(rewards).toEqual([]);
+    });
+
+    it("never shows another customer's code", async () => {
+      const mine = await seedWithReward();
+      const theirs = await seedWithReward();
+
+      const response = await mine.app.request(
+        `/api/public/card/${mine.customer.publicToken}`,
+      );
+      const raw = await response.text();
+
+      expect(raw).toContain(mine.reward.code);
+      expect(raw).not.toContain(theirs.reward.code);
+    });
   });
 
   it("leaks no id, no raw phone, and nothing internal", async () => {

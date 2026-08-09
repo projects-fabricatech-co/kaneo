@@ -132,6 +132,72 @@ export const findOrCreateCustomerSchema = v.object({
 });
 
 // ---------------------------------------------------------------------------
+// Rewards and redemption codes
+//
+// Declared BEFORE the stamps section because `stampResultSchema` embeds
+// `rewardSchema`: the stamp that fills a card returns the prize it just minted.
+// ---------------------------------------------------------------------------
+
+/**
+ * The column, which only ever holds these two. Expiry is NOT a status — it is
+ * `expiresAt` against the clock, derived wherever a code is displayed.
+ */
+export const rewardStatusSchema = v.picklist(["pending", "redeemed"] as const);
+
+export const rewardSchema = v.object({
+  id: v.string(),
+  storeId: v.string(),
+  programId: v.string(),
+  customerId: v.string(),
+  cardId: v.string(),
+  code: v.string(),
+  description: v.string(),
+  status: v.string(),
+  expiresAt: v.nullable(v.date()),
+  redeemedAt: v.nullable(v.date()),
+  redeemedByUserId: v.nullable(v.string()),
+  createdAt: v.date(),
+  updatedAt: v.date(),
+});
+
+/**
+ * What the cashier typed. Trimmed and upper-cased before anything looks at it,
+ * because the alphabet is uppercase-only and a phone keyboard is not: without
+ * this, `pk3f9r ` misses a row that is sitting right there.
+ *
+ * Deliberately NOT `^P[23456789A-Z]{6}$` — the length and the alphabet are
+ * `short-code.ts`'s business, and a code that fails to match should come back as
+ * "não encontrado" from the store-scoped lookup rather than as a 400 that leaks
+ * the code format.
+ */
+export const shortCodeSchema = v.pipe(
+  v.string(),
+  v.trim(),
+  v.toUpperCase(),
+  v.minLength(2, "Código inválido"),
+  v.maxLength(32, "Código inválido"),
+);
+
+export const codeKindSchema = v.picklist(["reward", "coupon"] as const);
+
+export const codeStateSchema = v.picklist([
+  "pending",
+  "redeemed",
+  "expired",
+] as const);
+
+/** The read-only answer to "what is this code?". */
+export const validateCodeResultSchema = v.object({
+  kind: codeKindSchema,
+  code: v.string(),
+  description: v.string(),
+  status: codeStateSchema,
+  expiresAt: v.nullable(v.date()),
+  redeemedAt: v.nullable(v.date()),
+  usable: v.boolean(),
+});
+
+// ---------------------------------------------------------------------------
 // Cards and stamps
 // ---------------------------------------------------------------------------
 
@@ -171,11 +237,27 @@ export const stampResultSchema = v.object({
   card: cardSchema,
   /** True when the idempotency key had already been used: nothing was created. */
   replayed: v.boolean(),
+  /** Present only once the card is full: the code the customer now holds. */
+  reward: v.nullable(rewardSchema),
 });
 
 export const voidStampResultSchema = v.object({
   stamp: stampSchema,
   card: cardSchema,
+});
+
+/**
+ * Declared here rather than beside `validateCodeResultSchema` because it embeds
+ * `cardSchema`: redeeming closes one cycle and opens the next, and the screen
+ * shows both — "prêmio entregue" plus "cartão 2 começou, 0/10".
+ */
+export const redeemCodeResultSchema = v.object({
+  kind: codeKindSchema,
+  reward: rewardSchema,
+  /** The cycle that was just closed. */
+  card: cardSchema,
+  /** The empty card the customer starts filling immediately. */
+  nextCard: cardSchema,
 });
 
 // ---------------------------------------------------------------------------
@@ -213,6 +295,17 @@ export const publicCardSchema = v.object({
       stampedAt: v.array(v.string()),
     }),
   ),
-  rewards: v.array(v.never()),
+  /**
+   * Pending and unexpired only, and three fields wide. No id, no status, no
+   * `redeemedAt` — a dead code shown to a customer is a promise the shop cannot
+   * keep, so it simply is not in the list.
+   */
+  rewards: v.array(
+    v.object({
+      code: v.string(),
+      description: v.string(),
+      expiresAt: v.nullable(v.string()),
+    }),
+  ),
   coupons: v.array(v.never()),
 });

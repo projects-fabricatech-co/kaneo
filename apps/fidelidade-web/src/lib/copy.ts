@@ -207,6 +207,30 @@ export const copy = {
     preview: "Como o cliente vê",
   },
 
+  validate: {
+    title: "Validar código",
+    subtitle: "Digite o código que o cliente está mostrando.",
+    inputLabel: "Código",
+    checking: "Conferindo...",
+    check: "Conferir",
+    confirm: "Confirmar resgate",
+    confirming: "Baixando resgate...",
+    cancel: "Cancelar",
+    rewardKind: "Prêmio",
+    couponKind: "Cupom",
+    aboutToGive: "Você vai entregar:",
+    validUntil: (date: string) => `Válido até ${date}`,
+    noExpiry: "Sem prazo de validade",
+    redeemed: "Resgate baixado!",
+    cardReset: "O cartão do cliente voltou a zero.",
+    notFound: "Código não encontrado.",
+    alreadyUsed: "Esse código já foi utilizado.",
+    expired: "Esse código expirou.",
+    couponSoon: "Cupons chegam na próxima etapa.",
+    error: "Não foi possível validar o código.",
+    hint: "O código tem 7 caracteres e começa com P (prêmio) ou C (cupom).",
+  },
+
   card: {
     stampsOf: (count: number, goal: number) => `${count} de ${goal} selos`,
     remaining: (missing: number) =>

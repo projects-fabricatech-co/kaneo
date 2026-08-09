@@ -10,10 +10,12 @@ import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import { auth } from "./auth";
 import card from "./card";
+import code from "./code";
 import customer from "./customer";
 import db from "./database";
 import program from "./program";
 import publicRoutes from "./public";
+import reward from "./reward";
 import stamp from "./stamp";
 import store from "./store";
 import { authenticateApiRequest } from "./utils/authenticate-api-request";
@@ -128,6 +130,8 @@ export function createApp() {
   const customerApi = api.route("/customer", customer);
   const cardApi = api.route("/card", card);
   const stampApi = api.route("/stamp", stamp);
+  const rewardApi = api.route("/reward", reward);
+  const codeApi = api.route("/code", code);
 
   app.route("/api", api);
 
@@ -140,11 +144,22 @@ export function createApp() {
     customerApi,
     cardApi,
     stampApi,
+    rewardApi,
+    codeApi,
   };
 }
 
-const { app, publicApi, storeApi, programApi, customerApi, cardApi, stampApi } =
-  createApp();
+const {
+  app,
+  publicApi,
+  storeApi,
+  programApi,
+  customerApi,
+  cardApi,
+  stampApi,
+  rewardApi,
+  codeApi,
+} = createApp();
 
 /**
  * A UNION, not an intersection, and each member has to come from its own `const`.
@@ -159,7 +174,9 @@ export type AppType =
   | typeof programApi
   | typeof customerApi
   | typeof cardApi
-  | typeof stampApi;
+  | typeof stampApi
+  | typeof rewardApi
+  | typeof codeApi;
 
 export default app;
 

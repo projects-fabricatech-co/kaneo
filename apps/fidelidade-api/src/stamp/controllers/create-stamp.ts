@@ -6,9 +6,12 @@ import {
   cardTable,
   customerTable,
   programTable,
+  rewardTable,
   stampTable,
 } from "../../database/schema";
+import { rewardExpiresAt } from "../../reward/reward-expiry";
 import { acquireAdvisoryLock } from "../../utils/advisory-lock";
+import { insertWithUniqueCode } from "../../utils/insert-with-unique-code";
 import { evaluateCooldown } from "../cooldown";
 import { stampCooldownError } from "../cooldown-error";
 
@@ -27,6 +30,14 @@ export type CreateStampResult = {
   card: typeof cardTable.$inferSelect;
   /** True when the key had already been used: nothing new was written. */
   replayed: boolean;
+  /**
+   * The reward this card carries, when the stamp completed it — so the stamp
+   * screen can show the code immediately instead of round-tripping. Null while
+   * the card is still filling. A replay reports the reward the original request
+   * created, because the cashier's phone may be retrying exactly the response
+   * that carried it.
+   */
+  reward: typeof rewardTable.$inferSelect | null;
 };
 
 /** The card the customer is currently filling, if any. */
@@ -58,6 +69,17 @@ async function loadCardById(tx: DatabaseExecutor, cardId: string) {
     .limit(1);
 
   return card ?? null;
+}
+
+/** At most one, by `rewards_cardId_unique`. */
+async function loadRewardByCardId(tx: DatabaseExecutor, cardId: string) {
+  const [reward] = await tx
+    .select()
+    .from(rewardTable)
+    .where(eq(rewardTable.cardId, cardId))
+    .limit(1);
+
+  return reward ?? null;
 }
 
 /**
@@ -150,7 +172,12 @@ async function createStamp(
         });
       }
 
-      return { stamp: last, card, replayed: true };
+      return {
+        stamp: last,
+        card,
+        replayed: true,
+        reward: await loadRewardByCardId(tx, card.id),
+      };
     }
 
     const cooldown = evaluateCooldown(
@@ -251,7 +278,12 @@ async function createStamp(
         });
       }
 
-      return { stamp: existing, card: current, replayed: true };
+      return {
+        stamp: existing,
+        card: current,
+        replayed: true,
+        reward: await loadRewardByCardId(tx, current.id),
+      };
     }
 
     // 7. Safe to compute from the value read above: every writer of this card
@@ -259,22 +291,13 @@ async function createStamp(
     const stampsCount = card.stampsCount + 1;
     const completed = stampsCount >= card.stampsRequired;
 
+    const completedAt = new Date();
+
     const [updatedCard] = await tx
       .update(cardTable)
       .set({
         stampsCount,
-        // 8. Completing the card does NOT create the reward yet.
-        //
-        //    ── PHASE 3 EXTENSION POINT ──────────────────────────────────────
-        //    When the card flips to `completed`, Phase 3 creates the reward row
-        //    here, inside this same transaction: `insertWithUniqueCode(tx,
-        //    rewardTable, "reward", { storeId, programId, customerId, cardId:
-        //    card.id, description: program.rewardDescription, expiresAt: now +
-        //    program.rewardValidityDays })`. It belongs in this transaction and
-        //    nowhere else — a reward created afterwards could be lost, and
-        //    `rewards_cardId_unique` makes it exactly-once.
-        //    ─────────────────────────────────────────────────────────────────
-        ...(completed ? { status: "completed", completedAt: new Date() } : {}),
+        ...(completed ? { status: "completed", completedAt } : {}),
       })
       .where(eq(cardTable.id, card.id))
       .returning();
@@ -285,6 +308,32 @@ async function createStamp(
       });
     }
 
+    // 8. The stamp that fills the card mints the reward, in THIS transaction and
+    //    nowhere else: a reward created afterwards could be lost to a crash
+    //    between the two writes, leaving a completed card the customer can
+    //    neither add to (step 5 refuses) nor redeem.
+    //
+    //    No defensive pre-SELECT: `rewards_cardId_unique` is what makes this
+    //    exactly-once, and it is reached only on the one stamp that flips the
+    //    card, which itself only happens once thanks to the advisory lock and
+    //    `stamps_card_idempotency_unique`.
+    //
+    //    The description is SNAPSHOT from the program, like `stampsRequired` on
+    //    the card: editing "café grátis" into "café + pão" tomorrow must not
+    //    silently change what an already-issued code promises.
+    let reward: typeof rewardTable.$inferSelect | null = null;
+
+    if (completed) {
+      reward = await insertWithUniqueCode(tx, rewardTable, "reward", {
+        storeId,
+        programId,
+        customerId,
+        cardId: card.id,
+        description: program.rewardDescription,
+        expiresAt: rewardExpiresAt(program.rewardValidityDays, completedAt),
+      });
+    }
+
     // 9. Denormalized onto the customer so the list screen can show "última
     //    visita" without touching the stamp ledger.
     await tx
@@ -292,7 +341,7 @@ async function createStamp(
       .set({ lastStampAt: inserted.createdAt })
       .where(eq(customerTable.id, customerId));
 
-    return { stamp: inserted, card: updatedCard, replayed: false };
+    return { stamp: inserted, card: updatedCard, replayed: false, reward };
   });
 }
 

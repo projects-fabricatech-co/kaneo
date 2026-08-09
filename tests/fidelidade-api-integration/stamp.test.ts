@@ -23,6 +23,7 @@ type StampResult = {
     completedAt: string | null;
   };
   replayed: boolean;
+  reward: { id: string; code: string; cardId: string } | null;
 };
 
 describe("API integration: stamps", () => {
@@ -181,9 +182,12 @@ describe("API integration: stamps", () => {
     expect(completing.card.status).toBe("completed");
     expect(completing.card.completedAt).not.toBeNull();
 
-    // Phase 3 owns reward creation; nothing may appear yet.
+    // The completing stamp mints the reward, in its own transaction. Exactly
+    // one, carried back on the response so the screen can show the code.
     const rewards = await db.select().from(schema.rewardTable);
-    expect(rewards).toHaveLength(0);
+    expect(rewards).toHaveLength(1);
+    expect(rewards[0]?.cardId).toBe(completing.card.id);
+    expect(completing.reward?.id).toBe(rewards[0]?.id);
 
     const overflow = await stamp(app, {
       storeId: store.id,

@@ -1,10 +1,11 @@
-import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, isNull, or, sql } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import {
   cardTable,
   customerTable,
   programTable,
+  rewardTable,
   stampTable,
   storeTable,
 } from "../../database/schema";
@@ -51,7 +52,11 @@ export type PublicCardResponse = {
     cycle: number;
     stampedAt: string[];
   }[];
-  rewards: never[];
+  rewards: {
+    code: string;
+    description: string;
+    expiresAt: string | null;
+  }[];
   coupons: never[];
 };
 
@@ -144,6 +149,29 @@ async function getPublicCard(token: string): Promise<PublicCardResponse> {
         .orderBy(desc(stampTable.createdAt))
     : [];
 
+  // Only what the customer can still walk in and use. A redeemed code is spent
+  // and an expired one is dead; showing either produces a person at the counter
+  // holding a code the cashier has to refuse, which is worse than not showing it
+  // at all. Three columns, hand-picked: no id, no status, no card linkage.
+  const rewards = await db
+    .select({
+      code: rewardTable.code,
+      description: rewardTable.description,
+      expiresAt: rewardTable.expiresAt,
+    })
+    .from(rewardTable)
+    .where(
+      and(
+        eq(rewardTable.customerId, customer.id),
+        eq(rewardTable.status, "pending"),
+        or(
+          isNull(rewardTable.expiresAt),
+          gt(rewardTable.expiresAt, sql`now()`),
+        ),
+      ),
+    )
+    .orderBy(asc(rewardTable.createdAt));
+
   const stampedByCard = new Map<string, string[]>();
 
   for (const row of stampRows) {
@@ -185,9 +213,13 @@ async function getPublicCard(token: string): Promise<PublicCardResponse> {
       cycle: card.cycle,
       stampedAt: stampedByCard.get(card.id) ?? [],
     })),
-    // Phase 3 fills `rewards`; Phase 4 fills `coupons`. Present and empty from
-    // day one so the web client never branches on their absence.
-    rewards: [],
+    rewards: rewards.map((reward) => ({
+      code: reward.code,
+      description: reward.description,
+      expiresAt: reward.expiresAt ? reward.expiresAt.toISOString() : null,
+    })),
+    // Phase 4 fills `coupons`. Present and empty from day one so the web client
+    // never branches on its absence.
     coupons: [],
   };
 }

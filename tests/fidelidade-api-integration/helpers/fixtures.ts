@@ -1,14 +1,18 @@
 import { createId } from "@paralleldrive/cuid2";
+import { and, eq, max } from "drizzle-orm";
 import db from "../../../apps/fidelidade-api/src/database";
 import {
+  cardTable,
   customerTable,
   programTable,
+  rewardTable,
   storeMemberTable,
   storeTable,
   subscriptionTable,
   userTable,
 } from "../../../apps/fidelidade-api/src/database/schema";
 import type { PlanId } from "../../../apps/fidelidade-api/src/plans/limits";
+import { generateShortCode } from "../../../apps/fidelidade-api/src/utils/short-code";
 import { generatePublicToken } from "../../../apps/fidelidade-api/src/utils/tokens";
 
 type SeededUser = typeof userTable.$inferSelect;
@@ -175,6 +179,68 @@ export async function seedCustomers(storeId: string, count: number) {
   }
 
   return db.insert(customerTable).values(rows).returning();
+}
+
+/**
+ * A completed card plus the reward it carries, seeded DIRECTLY.
+ *
+ * Tests about redemption need a code in a specific state — expired, already
+ * used, belonging to another store — and stamping a card ten times to reach each
+ * one would test `create-stamp` all over again instead of the thing under test.
+ * The minting path itself is covered end-to-end in `reward.test.ts`.
+ */
+export async function createRewardWithCard(
+  storeId: string,
+  programId: string,
+  customerId: string,
+  overrides: Partial<typeof rewardTable.$inferInsert> = {},
+) {
+  const [cycleRow] = await db
+    .select({ value: max(cardTable.cycle) })
+    .from(cardTable)
+    .where(
+      and(
+        eq(cardTable.programId, programId),
+        eq(cardTable.customerId, customerId),
+      ),
+    );
+
+  const [card] = await db
+    .insert(cardTable)
+    .values({
+      storeId,
+      programId,
+      customerId,
+      cycle: Number(cycleRow?.value ?? 0) + 1,
+      stampsCount: 1,
+      stampsRequired: 1,
+      status: "completed",
+      completedAt: new Date(),
+    })
+    .returning();
+
+  if (!card) {
+    throw new Error("failed to seed card");
+  }
+
+  const [reward] = await db
+    .insert(rewardTable)
+    .values({
+      storeId,
+      programId,
+      customerId,
+      cardId: card.id,
+      code: generateShortCode("reward"),
+      description: "Um café grátis",
+      ...overrides,
+    })
+    .returning();
+
+  if (!reward) {
+    throw new Error("failed to seed reward");
+  }
+
+  return { card, reward };
 }
 
 /**
