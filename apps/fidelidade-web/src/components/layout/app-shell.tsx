@@ -19,6 +19,7 @@ const desktopNav = [
   { to: "/clientes", label: copy.nav.clientes },
   { to: "/programa", label: copy.nav.programa },
   { to: "/cupons", label: copy.nav.cupons },
+  { to: "/planos", label: copy.nav.planos },
 ] as const;
 
 export function AppShell({

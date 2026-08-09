@@ -193,6 +193,49 @@ export const copy = {
     usage: (used: number, max: number) => `${used} de ${max} usados`,
   },
 
+  plans: {
+    title: "Planos",
+    subtitle: "Escolha o tamanho que a sua loja precisa hoje.",
+    currentPlan: "Seu plano atual",
+    monthly: "Mensal",
+    annual: "Anual",
+    annualHint: "Dois meses grátis no anual",
+    perMonth: "/mês",
+    perYear: "/ano",
+    free: "Grátis",
+    choose: "Assinar",
+    current: "Plano atual",
+    downgradeHint: "Para trocar ou cancelar, use o portal de cobrança.",
+    manage: "Gerenciar cobrança",
+    opening: "Abrindo...",
+    renewsAt: (date: string) => `Renova em ${date}`,
+    endsAt: (date: string) => `Ativo até ${date}`,
+    canceling: "Cancelamento agendado",
+    pastDue:
+      "Pagamento pendente. Atualize o cartão para não perder os recursos.",
+    usageTitle: "Uso atual",
+    usageStores: "Lojas",
+    usageCustomers: "Clientes",
+    usageMembers: "Equipe",
+    unlimited: "ilimitado",
+    notConfigured:
+      "A cobrança ainda não está configurada nesta instalação. Os limites do plano Grátis continuam valendo.",
+    checkoutError: "Não foi possível abrir o pagamento.",
+    portalError: "Não foi possível abrir o portal de cobrança.",
+    features: {
+      stores: (max: number) => (max === 1 ? "1 loja" : `Até ${max} lojas`),
+      programs: (max: number) =>
+        max === 1 ? "1 programa de fidelidade" : `Até ${max} programas`,
+      customers: (max: number | null) =>
+        max === null ? "Clientes ilimitados" : `Até ${max} clientes`,
+      members: (max: number) =>
+        max === 1 ? "Só você no caixa" : `Até ${max} pessoas na equipe`,
+      coupons: "Cupons e campanhas",
+      branding: "Sua marca no cartão",
+      reports: "Relatórios avançados",
+    },
+  },
+
   phone: {
     label: "Celular do cliente",
     placeholder: "(11) 98765-4321",

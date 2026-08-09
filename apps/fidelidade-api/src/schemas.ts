@@ -569,3 +569,50 @@ export const claimPublicCouponSchema = v.object({
   /** `${FIDELIDADE_CLIENT_URL}/c/<token>` — the customer's own loyalty card. */
   cardUrl: v.string(),
 });
+
+// ---------------------------------------------------------------------------
+// Billing
+// ---------------------------------------------------------------------------
+
+export const planIdSchema = v.picklist(["gratis", "essencial", "pro"] as const);
+export const paidPlanIdSchema = v.picklist(["essencial", "pro"] as const);
+export const billingIntervalSchema = v.picklist(["monthly", "annual"] as const);
+
+export const planLimitsSchema = v.object({
+  maxStores: v.number(),
+  maxProgramsPerStore: v.number(),
+  /** `null` means unlimited. */
+  maxCustomersPerStore: v.nullable(v.number()),
+  maxMembersPerStore: v.number(),
+  coupons: v.boolean(),
+  branding: v.boolean(),
+  reports: v.boolean(),
+});
+
+/**
+ * Everything the /planos screen renders — and NOTHING about Stripe's own ids.
+ * `hasStripeCustomer` is the only thing said about the customer record, because
+ * the portal endpoint is what the client uses to reach it.
+ */
+export const mySubscriptionSchema = v.object({
+  plan: planIdSchema,
+  planLabel: v.string(),
+  limits: planLimitsSchema,
+  usage: v.object({
+    storeId: v.nullable(v.string()),
+    stores: v.number(),
+    customers: v.number(),
+    members: v.number(),
+  }),
+  status: v.nullable(v.string()),
+  billingInterval: v.nullable(v.string()),
+  currentPeriodEnd: v.nullable(v.date()),
+  cancelAtPeriodEnd: v.boolean(),
+  trialEndsAt: v.nullable(v.date()),
+  hasStripeCustomer: v.boolean(),
+  billingConfigured: v.boolean(),
+});
+
+export const checkoutSessionSchema = v.object({ checkoutUrl: v.string() });
+
+export const portalSessionSchema = v.object({ portalUrl: v.string() });

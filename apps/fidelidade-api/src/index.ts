@@ -9,6 +9,8 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import { auth } from "./auth";
+import billing from "./billing";
+import handleStripeWebhook from "./billing/controllers/handle-webhook";
 import card from "./card";
 import code from "./code";
 import coupon from "./coupon";
@@ -99,11 +101,13 @@ export function createApp() {
 
   // Stripe delivers this one; it authenticates by signature, not by session.
   // The raw body must reach `constructEvent` byte-for-byte, so this route reads
-  // `c.req.text()` and nothing may parse the body before it. Phase 6 fills in
-  // the handler; until then the endpoint exists and reports it is disabled.
+  // `c.req.text()` and nothing may parse the body before it — a JSON parse and
+  // re-serialise anywhere upstream changes the bytes and every signature fails.
   api.post("/stripe/webhook", async (c) => {
-    await c.req.text();
-    throw new HTTPException(404, { message: "Not found" });
+    const rawBody = await c.req.text();
+    const signature = c.req.header("stripe-signature") ?? null;
+    const result = await handleStripeWebhook(rawBody, signature);
+    return c.json(result);
   });
 
   // The customer's own card, opened from a link or a QR code. Unauthenticated by
@@ -136,6 +140,7 @@ export function createApp() {
   const codeApi = api.route("/code", code);
   const couponApi = api.route("/coupon", coupon);
   const dashboardApi = api.route("/dashboard", dashboard);
+  const billingApi = api.route("/billing", billing);
 
   app.route("/api", api);
 
@@ -152,6 +157,7 @@ export function createApp() {
     codeApi,
     couponApi,
     dashboardApi,
+    billingApi,
   };
 }
 
@@ -167,6 +173,7 @@ const {
   codeApi,
   couponApi,
   dashboardApi,
+  billingApi,
 } = createApp();
 
 /**
@@ -186,7 +193,8 @@ export type AppType =
   | typeof rewardApi
   | typeof codeApi
   | typeof couponApi
-  | typeof dashboardApi;
+  | typeof dashboardApi
+  | typeof billingApi;
 
 export default app;
 

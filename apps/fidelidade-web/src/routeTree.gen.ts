@@ -16,6 +16,7 @@ import { Route as AppCarimbarRouteImport } from './routes/_app/carimbar'
 import { Route as AppClientesRouteImport } from './routes/_app/clientes'
 import { Route as AppCuponsRouteImport } from './routes/_app/cupons'
 import { Route as AppPainelRouteImport } from './routes/_app/painel'
+import { Route as AppPlanosRouteImport } from './routes/_app/planos'
 import { Route as AppProgramaRouteImport } from './routes/_app/programa'
 import { Route as AppValidarRouteImport } from './routes/_app/validar'
 import { Route as AuthCadastrarRouteImport } from './routes/auth/cadastrar'
@@ -57,6 +58,11 @@ const AppPainelRoute = AppPainelRouteImport.update({
   path: '/painel',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPlanosRoute = AppPlanosRouteImport.update({
+  id: '/planos',
+  path: '/planos',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppProgramaRoute = AppProgramaRouteImport.update({
   id: '/programa',
   path: '/programa',
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/clientes': typeof AppClientesRoute
   '/cupons': typeof AppCuponsRoute
   '/painel': typeof AppPainelRoute
+  '/planos': typeof AppPlanosRoute
   '/programa': typeof AppProgramaRoute
   '/validar': typeof AppValidarRoute
   '/auth/cadastrar': typeof AuthCadastrarRoute
@@ -109,6 +116,7 @@ export interface FileRoutesByTo {
   '/clientes': typeof AppClientesRoute
   '/cupons': typeof AppCuponsRoute
   '/painel': typeof AppPainelRoute
+  '/planos': typeof AppPlanosRoute
   '/programa': typeof AppProgramaRoute
   '/validar': typeof AppValidarRoute
   '/auth/cadastrar': typeof AuthCadastrarRoute
@@ -125,6 +133,7 @@ export interface FileRoutesById {
   '/_app/clientes': typeof AppClientesRoute
   '/_app/cupons': typeof AppCuponsRoute
   '/_app/painel': typeof AppPainelRoute
+  '/_app/planos': typeof AppPlanosRoute
   '/_app/programa': typeof AppProgramaRoute
   '/_app/validar': typeof AppValidarRoute
   '/auth/cadastrar': typeof AuthCadastrarRoute
@@ -141,6 +150,7 @@ export interface FileRouteTypes {
     | '/clientes'
     | '/cupons'
     | '/painel'
+    | '/planos'
     | '/programa'
     | '/validar'
     | '/auth/cadastrar'
@@ -155,6 +165,7 @@ export interface FileRouteTypes {
     | '/clientes'
     | '/cupons'
     | '/painel'
+    | '/planos'
     | '/programa'
     | '/validar'
     | '/auth/cadastrar'
@@ -170,6 +181,7 @@ export interface FileRouteTypes {
     | '/_app/clientes'
     | '/_app/cupons'
     | '/_app/painel'
+    | '/_app/planos'
     | '/_app/programa'
     | '/_app/validar'
     | '/auth/cadastrar'
@@ -239,6 +251,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPainelRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/planos': {
+      id: '/_app/planos'
+      path: '/planos'
+      fullPath: '/planos'
+      preLoaderRoute: typeof AppPlanosRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/programa': {
       id: '/_app/programa'
       path: '/programa'
@@ -289,6 +308,7 @@ interface AppRouteChildren {
   AppClientesRoute: typeof AppClientesRoute
   AppCuponsRoute: typeof AppCuponsRoute
   AppPainelRoute: typeof AppPainelRoute
+  AppPlanosRoute: typeof AppPlanosRoute
   AppProgramaRoute: typeof AppProgramaRoute
   AppValidarRoute: typeof AppValidarRoute
 }
@@ -298,6 +318,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppClientesRoute: AppClientesRoute,
   AppCuponsRoute: AppCuponsRoute,
   AppPainelRoute: AppPainelRoute,
+  AppPlanosRoute: AppPlanosRoute,
   AppProgramaRoute: AppProgramaRoute,
   AppValidarRoute: AppValidarRoute,
 }
