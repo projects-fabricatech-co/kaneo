@@ -116,9 +116,14 @@ function ValidarRoute() {
       </header>
 
       {stage.step === "done" ? (
-        <Card className="border-primary/40 bg-primary/5">
+        <Card className="border-success/40 bg-success/8">
           <CardContent className="flex flex-col items-center gap-3 py-6 text-center">
-            <CheckCircle2 aria-hidden="true" className="size-10 text-primary" />
+            {/* Success is GREEN, not brand coral. Coral sits close enough to red
+                that a confirmation painted in it reads as a refusal at a glance,
+                and this is the screen where the cashier decides whether to hand
+                over a free coffee. The design system keeps a separate success
+                colour for exactly this. */}
+            <CheckCircle2 aria-hidden="true" className="size-10 text-success" />
             <p className="text-lg font-semibold">{copy.validate.redeemed}</p>
             <p className="text-sm">{stage.description}</p>
             {stage.resetCard ? (

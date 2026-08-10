@@ -186,7 +186,7 @@ export const copy = {
     nameRequired: "Informe o nome da loja.",
     nameTooShort: "O nome precisa ter pelo menos 2 caracteres.",
     slugLabel: "Endereço do cartão",
-    slugHint: (slug: string) => `fidelidade.app/c/${slug || "sua-loja"}`,
+    slugHint: (slug: string) => `valedesconto.com.br/c/${slug || "sua-loja"}`,
     slugInvalid:
       "Use apenas letras, números e hifens (ex.: padaria-da-esquina).",
     submit: "Criar loja",
@@ -367,7 +367,7 @@ export const copy = {
     emptyAction: "Criar programa",
     nameLabel: "Nome do programa",
     namePlaceholder: "Cartão Fidelidade",
-    stampsLabel: "Selos para ganhar a recompensa",
+    stampsLabel: "Carimbos para ganhar a recompensa",
     stampsHint: "Entre 1 e 100 carimbos.",
     rewardLabel: "Qual é a recompensa",
     rewardPlaceholder: "Um café expresso grátis",
