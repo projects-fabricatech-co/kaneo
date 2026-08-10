@@ -197,6 +197,10 @@ function PublicCouponRoute() {
           </CardContent>
         </Card>
       )}
+
+      <footer className="pb-2 text-center text-xs text-muted-foreground opacity-70">
+        {copy.card.poweredBy}
+      </footer>
     </main>
   );
 }

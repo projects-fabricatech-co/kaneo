@@ -70,7 +70,7 @@ const DEFAULTS: ProgramValues = {
   stampsRequired: "10",
   rewardValidityDays: "30",
   cooldownMinutes: "60",
-  cardColor: "#4F46E5",
+  cardColor: "#D93825",
 };
 
 function ProgramaRoute() {

@@ -13,8 +13,8 @@
  */
 export const copy = {
   app: {
-    name: "Fidelidade",
-    tagline: "Cartão fidelidade digital para o seu negócio",
+    name: "Vale Desconto",
+    tagline: "Sua fidelidade vale.",
   },
 
   common: {
@@ -32,12 +32,102 @@ export const copy = {
 
   landing: {
     eyebrow: "Adeus, cartãozinho de papel",
-    title: "O cartão fidelidade do seu negócio, agora no celular",
+    title: "Fidelidade simples para negócios de verdade",
     subtitle:
-      "Carimbe pelo celular no balcão, acompanhe quem volta e recompense seus melhores clientes. Sem app para o cliente instalar.",
+      "Cada compra deixa seu cliente mais perto de uma recompensa. Você carimba pelo celular, ele acompanha por um link. Sem conta, sem senha e sem aplicativo para instalar.",
     ctaPrimary: "Criar minha conta grátis",
     ctaSecondary: "Já tenho conta",
-    note: "Página completa chega na Fase 7.",
+    ctaNote: "Comece no plano Grátis. Sem cartão de crédito.",
+
+    howTitle: "Três passos, e o primeiro leva um minuto",
+    steps: [
+      {
+        title: "Monte sua campanha",
+        body: "Escolha quantos carimbos valem a recompensa e o que o cliente ganha. Um café, um corte, um desconto — você decide.",
+      },
+      {
+        title: "Carimbe no balcão",
+        body: "Digite o celular do cliente e toque em carimbar. Leva o tempo de passar o cartão na maquininha.",
+      },
+      {
+        title: "Ele volta para resgatar",
+        body: "O cliente acompanha o progresso por link ou QR. Ao completar, recebe um código curto que você confere no balcão.",
+      },
+    ],
+
+    audienceTitle: "Feito para quem vive de cliente que volta",
+    segments: [
+      "Cafeterias",
+      "Restaurantes",
+      "Barbearias",
+      "Salões",
+      "Pet shops",
+      "Varejo",
+      "Serviços",
+    ],
+
+    proofTitle: "Por que não é só mais um app de desconto",
+    proofs: [
+      {
+        title: "Seu cliente não cria conta",
+        body: "Nem senha, nem cadastro, nem download. Ele abre um link e vê quantos carimbos tem.",
+      },
+      {
+        title: "A marca em evidência é a sua",
+        body: "O cartão que o cliente abre leva o nome, a cor e o logo do seu negócio. A gente organiza, você aparece.",
+      },
+      {
+        title: "Resgate conferido no balcão",
+        body: "A recompensa vira um código curto de uso único. Depois de usado, não vale de novo.",
+      },
+      {
+        title: "Você enxerga quem volta",
+        body: "Carimbos do dia, clientes ativos e quem está a um carimbo do prêmio — para saber quem merece uma lembrança.",
+      },
+    ],
+
+    notTitle: "O que a Vale Desconto não é",
+    notBody:
+      "Não somos marketplace de cupons, clube de ofertas nem comparador de preços. Seu cliente é seu, e sua base não vira vitrine de concorrente.",
+
+    pricingTitle: "Comece grátis, cresça quando fizer sentido",
+    pricingNote:
+      "Preços em reais. Cancele quando quiser pelo portal de cobrança.",
+
+    faqTitle: "Perguntas que todo lojista faz",
+    faq: [
+      {
+        q: "Meu cliente precisa instalar alguma coisa?",
+        a: "Não. Ele abre um link no navegador do celular e vê o cartão. Se quiser, salva na tela de início — mas nada é obrigatório.",
+      },
+      {
+        q: "E se o cliente perder o link?",
+        a: "É só você buscar pelo celular dele no balcão. O cartão está sempre lá, ligado ao número de telefone.",
+      },
+      {
+        q: "Dá para alguém carimbar duas vezes na mesma compra?",
+        a: "O sistema bloqueia carimbos repetidos dentro de uma janela que você configura, e um toque duplo no botão nunca vira dois carimbos.",
+      },
+      {
+        q: "Meu time no caixa pode carimbar?",
+        a: "Pode. Cada pessoa entra com o próprio acesso e só faz o que é do balcão: carimbar, validar código e buscar cliente. Mexer no programa e nos planos é só seu.",
+      },
+      {
+        q: "Preciso de maquininha ou leitor especial?",
+        a: "Não. Basta o celular que você já usa.",
+      },
+      {
+        q: "Posso cancelar quando quiser?",
+        a: "Pode. Se cancelar, sua conta volta para o plano Grátis e seus dados continuam lá — só a criação de coisas novas fica limitada.",
+      },
+    ],
+
+    finalTitle: "Toda compra pode ser o começo da próxima visita",
+    finalBody:
+      "Reconheça quem escolhe voltar. Sem papel, sem aplicativo e sem complicação.",
+
+    footerTagline: "Sua fidelidade vale.",
+    footerRights: (year: number) => `© ${year} Vale Desconto`,
   },
 
   auth: {
@@ -244,7 +334,7 @@ export const copy = {
 
   stamp: {
     title: "Carimbar",
-    subtitle: "Digite o celular do cliente para dar o selo.",
+    subtitle: "Digite o celular do cliente para dar o carimbo.",
     lookup: "Buscar cliente",
     lookingUp: "Buscando...",
     newCustomer: "Cliente novo",
@@ -255,7 +345,7 @@ export const copy = {
     action: "Carimbar",
     stamping: "Carimbando...",
     success: (count: number, goal: number) =>
-      `Carimbado! ${count} de ${goal} selos.`,
+      `Carimbado! ${count} de ${goal} carimbos.`,
     replayed: "Esse carimbo já havia sido registrado.",
     completed: "Cartão completo! Gere a recompensa do cliente.",
     cardFull: "Cartão completo. Resgate o prêmio antes de carimbar.",
@@ -272,18 +362,18 @@ export const copy = {
 
   program: {
     title: "Programa de fidelidade",
-    subtitle: "Quantos selos, qual a recompensa e a cara do cartão.",
+    subtitle: "Quantos carimbos, qual a recompensa e a cara do cartão.",
     empty: "Você ainda não tem um programa de fidelidade.",
     emptyAction: "Criar programa",
     nameLabel: "Nome do programa",
     namePlaceholder: "Cartão Fidelidade",
     stampsLabel: "Selos para ganhar a recompensa",
-    stampsHint: "Entre 1 e 100 selos.",
+    stampsHint: "Entre 1 e 100 carimbos.",
     rewardLabel: "Qual é a recompensa",
     rewardPlaceholder: "Um café expresso grátis",
     validityLabel: "Validade da recompensa (dias)",
     validityHint: "Depois disso o código de resgate expira.",
-    cooldownLabel: "Intervalo mínimo entre selos (minutos)",
+    cooldownLabel: "Intervalo mínimo entre carimbos (minutos)",
     cooldownHint: "Evita carimbo repetido por engano. 0 desliga a trava.",
     colorLabel: "Cor do cartão",
     createSubmit: "Criar programa",
@@ -378,9 +468,11 @@ export const copy = {
   },
 
   card: {
-    stampsOf: (count: number, goal: number) => `${count} de ${goal} selos`,
+    // "Carimbo", never "selo": the carimbo is the product's proprietary element
+    // and every other screen already calls it that. One word for one thing.
+    stampsOf: (count: number, goal: number) => `${count} de ${goal} carimbos`,
     remaining: (missing: number) =>
-      missing === 1 ? "Falta 1 selo!" : `Faltam ${missing} selos`,
+      missing === 1 ? "Falta 1 carimbo!" : `Faltam ${missing} carimbos`,
     complete: "Cartão completo!",
     rewardLabel: "Sua recompensa",
     rewardCodeLabel: "Mostre este código na loja",
@@ -394,6 +486,9 @@ export const copy = {
       "Esse link não é válido ou foi desativado. Peça um novo na loja.",
     loading: "Abrindo seu cartão...",
     savedHint: "Salve este link nos favoritos para voltar rápido.",
+    // The design system's brand architecture: on a public page the merchant
+    // leads and Vale Desconto signs discreetly underneath.
+    poweredBy: "Fidelidade digital por Vale Desconto",
   },
 } as const;
 

@@ -62,14 +62,14 @@ describe("PublicCardView", () => {
 
   it("shows progress and how many stamps are left", () => {
     render(<PublicCardView data={build()} />);
-    expect(screen.getByText("3 de 10 selos")).toBeInTheDocument();
-    expect(screen.getByText("Faltam 7 selos")).toBeInTheDocument();
+    expect(screen.getByText("3 de 10 carimbos")).toBeInTheDocument();
+    expect(screen.getByText("Faltam 7 carimbos")).toBeInTheDocument();
   });
 
   it("uses the singular when one stamp is left", () => {
     const data = build({ cards: [buildEntry({ stampsCount: 9 })] });
     render(<PublicCardView data={data} />);
-    expect(screen.getByText("Falta 1 selo!")).toBeInTheDocument();
+    expect(screen.getByText("Falta 1 carimbo!")).toBeInTheDocument();
   });
 
   it("announces a complete card", () => {

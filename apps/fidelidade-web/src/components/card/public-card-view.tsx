@@ -181,6 +181,7 @@ export function PublicCardView({ data }: PublicCardViewProps) {
           </p>
         ) : null}
         <p>{copy.card.savedHint}</p>
+        <p className="pt-1 opacity-70">{copy.card.poweredBy}</p>
       </footer>
     </div>
   );

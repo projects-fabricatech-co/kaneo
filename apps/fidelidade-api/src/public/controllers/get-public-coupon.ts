@@ -6,7 +6,7 @@ import { couponTable, storeTable } from "../../database/schema";
 import { resolvePlanForStore } from "../../plans/resolve-plan";
 
 /** Matches `stores.brand_color`'s column default, as in `get-public-card.ts`. */
-const DEFAULT_BRAND_COLOR = "#4F46E5";
+const DEFAULT_BRAND_COLOR = "#D93825";
 
 export type PublicCouponResponse = {
   title: string;

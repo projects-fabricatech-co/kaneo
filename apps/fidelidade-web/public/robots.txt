@@ -1,0 +1,25 @@
+# Vale Desconto
+#
+# /c/ and /cupom/ are the customer-facing pages, addressed by an opaque token.
+# They carry LIVE redemption codes and a customer's first name, so they must
+# never be indexed: a crawled page is a code sitting in a search result, and a
+# search engine cache outlives the code's expiry.
+#
+# The lojista's own screens are behind a session and would only produce a wall
+# of login redirects in the index.
+
+User-agent: *
+Disallow: /c/
+Disallow: /cupom/
+Disallow: /painel
+Disallow: /carimbar
+Disallow: /validar
+Disallow: /clientes
+Disallow: /programa
+Disallow: /cupons
+Disallow: /planos
+Disallow: /onboarding
+Disallow: /auth/
+Allow: /
+
+Sitemap: https://valedesconto.com.br/sitemap.xml

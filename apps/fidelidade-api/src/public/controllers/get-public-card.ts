@@ -20,7 +20,7 @@ import { maskBrPhone } from "../../utils/phone";
  * branding renders in this colour rather than the custom one it may still have
  * stored from a paid period.
  */
-const DEFAULT_BRAND_COLOR = "#4F46E5";
+export const DEFAULT_BRAND_COLOR = "#D93825";
 
 /** Most recent 30 stamp instants per card — enough to draw the card, not a log. */
 const MAX_STAMP_TIMESTAMPS = 30;

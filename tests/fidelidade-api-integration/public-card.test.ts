@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import db, { schema } from "../../apps/fidelidade-api/src/database";
 import { createApp } from "../../apps/fidelidade-api/src/index";
 import type { PlanId } from "../../apps/fidelidade-api/src/plans/limits";
+import { DEFAULT_BRAND_COLOR } from "../../apps/fidelidade-api/src/public/controllers/get-public-card";
 import { mockAnonymousSession, mockAuthenticatedSession } from "./helpers/auth";
 import { resetTestDatabase } from "./helpers/database";
 import {
@@ -372,7 +373,11 @@ describe("API integration: public card", () => {
     };
 
     expect(body.store.logoUrl).toBeNull();
-    expect(body.store.brandColor).toBe("#4F46E5");
+    // Compared against the exported constant, not a literal: the fallback is a
+    // brand decision that will move again, and a copy of it here would just go
+    // stale silently.
+    expect(body.store.brandColor).toBe(DEFAULT_BRAND_COLOR);
+    expect(body.store.brandColor).not.toBe("#00FF00");
 
     const persisted = await db.query.storeTable.findFirst({
       where: eq(schema.storeTable.id, store.id),
