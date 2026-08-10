@@ -11,6 +11,7 @@ import {
   storeSchema,
   storeWithRoleSchema,
 } from "../schemas";
+import { nullableImageUrlSchema } from "../utils/image-url";
 import { requireStoreRole } from "../utils/require-store-role";
 import { storeAccess } from "../utils/store-access-middleware";
 import addMemberCtrl from "./controllers/add-member";
@@ -85,7 +86,7 @@ const store = new Hono<{
         state: v.optional(v.nullable(brazilianStateSchema)),
         timezone: v.optional(v.string()),
         brandColor: v.optional(hexColorSchema),
-        logoUrl: v.optional(v.nullable(v.string())),
+        logoUrl: v.optional(nullableImageUrlSchema),
       }),
     ),
     async (c) => {
@@ -174,7 +175,7 @@ const store = new Hono<{
       "json",
       v.object({
         brandColor: v.optional(hexColorSchema),
-        logoUrl: v.optional(v.nullable(v.string())),
+        logoUrl: v.optional(nullableImageUrlSchema),
       }),
     ),
     storeAccess.fromStore(),

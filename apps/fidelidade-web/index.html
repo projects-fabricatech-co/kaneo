@@ -47,6 +47,16 @@
   <meta name="format-detection" content="telephone=no" />
 
   <!--
+    The customer's card lives at /c/<token> and the token IS the credential, so
+    the path must never travel to a third party. Modern browsers already default
+    to strict-origin-when-cross-origin, which strips the path — but the logo on a
+    card is fetched from a host the LOJISTA chose, and "the visitor's browser
+    happens to default correctly" is not a control. Declaring no-referrer makes it
+    deterministic. Nothing in this app reads Referer.
+  -->
+  <meta name="referrer" content="no-referrer" />
+
+  <!--
     Structured data. Kept in the served HTML rather than injected by the app so a
     crawler that does not execute JavaScript still reads it.
 

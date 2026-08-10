@@ -9,6 +9,7 @@ import {
   rewardValidityDaysSchema,
   stampsRequiredSchema,
 } from "../schemas";
+import { nullableImageUrlSchema } from "../utils/image-url";
 import { requireStoreRole } from "../utils/require-store-role";
 import { storeAccess } from "../utils/store-access-middleware";
 import archiveProgramCtrl from "./controllers/archive-program";
@@ -98,7 +99,7 @@ const program = new Hono<{
         cooldownMinutes: v.optional(cooldownMinutesSchema),
         cardColor: v.optional(hexColorSchema),
         cardTextColor: v.optional(hexColorSchema),
-        logoUrl: v.optional(v.nullable(v.string())),
+        logoUrl: v.optional(nullableImageUrlSchema),
       }),
     ),
     storeAccess.fromBody(),
@@ -172,7 +173,7 @@ const program = new Hono<{
         cooldownMinutes: v.optional(cooldownMinutesSchema),
         cardColor: v.optional(hexColorSchema),
         cardTextColor: v.optional(hexColorSchema),
-        logoUrl: v.optional(v.nullable(v.string())),
+        logoUrl: v.optional(nullableImageUrlSchema),
         status: v.optional(programStatusSchema),
       }),
     ),

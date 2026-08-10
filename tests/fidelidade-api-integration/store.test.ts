@@ -135,6 +135,34 @@ describe("API integration: stores", () => {
     expect(response.status).toBe(400);
   });
 
+  it("refuses a logo URL that is not an http(s) address", async () => {
+    // The logo is the one value a lojista controls that the product renders on a
+    // page belonging to somebody ELSE — their customer's card. The route is where
+    // that promise can still be refused; this test is what keeps the boundary
+    // wired after somebody edits the schema.
+    const user = await createUser();
+    mockAuthenticatedSession(user);
+    const { app } = createApp();
+
+    for (const logoUrl of [
+      "javascript:alert(1)",
+      "data:image/png;base64,iVBORw0KGgo=",
+      "logo.png",
+    ]) {
+      const response = await app.request("/api/store", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          name: "Loja",
+          slug: `loja-${Date.now()}`,
+          logoUrl,
+        }),
+      });
+
+      expect(response.status).toBe(400);
+    }
+  });
+
   it("lists only the stores the caller belongs to", async () => {
     const { user, store } = await createStoreOwner({ storeName: "Minha Loja" });
     await createStoreOwner({ storeName: "Loja de Outro" });
