@@ -33,8 +33,8 @@ export const PLAN_CATALOGUE: PlanOffer[] = [
     id: "essencial",
     name: "Essencial",
     tagline: "Para a loja que já tem clientes fiéis",
-    monthlyCents: 4990,
-    annualCents: 49900,
+    monthlyCents: 1999,
+    annualCents: 19990,
     limits: {
       maxStores: 1,
       maxProgramsPerStore: 3,
@@ -49,8 +49,8 @@ export const PLAN_CATALOGUE: PlanOffer[] = [
     id: "pro",
     name: "Pro",
     tagline: "Para quem tem mais de uma unidade",
-    monthlyCents: 9990,
-    annualCents: 99900,
+    monthlyCents: 4990,
+    annualCents: 49900,
     limits: {
       maxStores: 10,
       maxProgramsPerStore: 10,
