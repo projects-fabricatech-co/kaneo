@@ -110,7 +110,13 @@ const publicRoutes = new Hono()
     validator(
       "json",
       v.object({
-        phone: v.pipe(v.string(), v.minLength(1, "Informe o telefone")),
+        // Capped: no BR phone spelling exceeds this, and the field sits on the
+        // one unauthenticated write in the product.
+        phone: v.pipe(
+          v.string(),
+          v.minLength(1, "Informe o telefone"),
+          v.maxLength(32, "Telefone inválido"),
+        ),
         name: v.optional(
           v.nullable(v.pipe(v.string(), v.maxLength(120, "Nome muito longo"))),
         ),

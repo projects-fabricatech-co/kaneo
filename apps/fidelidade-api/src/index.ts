@@ -6,6 +6,7 @@ import { config } from "dotenv-mono";
 import { sql } from "drizzle-orm";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import { auth } from "./auth";
@@ -72,15 +73,24 @@ export function createApp() {
 
   const corsOrigins = resolveCorsOrigins();
 
+  // Ahead of CORS and every route: a body nobody will accept should not be
+  // buffered first. The unauthenticated coupon claim took a 60 MB `phone` string
+  // all the way to validation.
+  app.use("*", bodyLimit({ maxSize: 64 * 1024 }));
+
   app.use(
     "*",
     cors({
       credentials: true,
+      // FAILS CLOSED. With no allowlist configured this used to reflect whatever
+      // origin asked, alongside `credentials: true` — a wildcard-with-credentials
+      // branch that only failed to be exploitable because the session cookie is
+      // SameSite=Lax. Relying on that is a load-bearing accident: the day the app
+      // and the API live on unrelated domains, `sameSite: "none"` becomes
+      // necessary and the accident stops covering. A missing allowlist is a
+      // misconfiguration, and the safe answer to a misconfiguration is "no".
       origin: (origin) => {
-        if (!corsOrigins) {
-          return origin || "*";
-        }
-        if (!origin) {
+        if (!corsOrigins || !origin) {
           return null;
         }
         return corsOrigins.includes(origin) ? origin : null;

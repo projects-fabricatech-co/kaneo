@@ -20,7 +20,8 @@ export type ClaimPublicCouponInput = {
 export type ClaimPublicCouponResult = {
   code: string;
   expiresAt: string | null;
-  cardUrl: string;
+  /** Only for a customer this claim just enrolled; null for a returning one. */
+  cardUrl: string | null;
 };
 
 export function couponSoldOutError(): HTTPException {
@@ -130,12 +131,34 @@ async function claimPublicCoupon(
 
   // May throw 422 (unusable phone) or 402 (the store's customer ceiling on
   // Grátis). Both are the honest answer: there is no code without a customer.
-  const { customer } = await findOrCreateCustomer(coupon.storeId, {
+  const { customer, created } = await findOrCreateCustomer(coupon.storeId, {
     phone: input.phone,
     name: input.name,
   });
 
-  const cardUrl = cardUrlFor(customer.publicToken);
+  /**
+   * THE CARD LINK IS ONLY EVER HANDED TO SOMEBODY WE JUST ENROLLED.
+   *
+   * `customers.publicToken` is the single credential protecting a card, and this
+   * endpoint is unauthenticated: the campaign link is printed on a poster and
+   * posted to Instagram, so it is not a secret by design. Returning the token for
+   * a customer who ALREADY existed meant that anyone holding the poster plus a
+   * phone number — a number, not a proof of owning it — received that person's
+   * card link, and with it their name, their visit history and every live
+   * single-use reward code, which they could then spend at the counter. Silently:
+   * a repeat claim returns early, so no slot moves and nothing is logged.
+   *
+   * Typing a phone number does not prove possession of the phone. It proves it
+   * for exactly one case — the person who was not in the base a moment ago and
+   * whose card therefore contains nothing but what they just earned. That is the
+   * only case that gets a link.
+   *
+   * A returning visitor still gets their code, which is safe: the redemption is
+   * unique on `(coupon_id, customer_id)`, so they can only ever be shown their
+   * own. To reach their card they use the link they already have, or ask at the
+   * counter.
+   */
+  const cardUrl = created ? cardUrlFor(customer.publicToken) : null;
 
   const redemption = await db.transaction(async (tx) => {
     // 1. Fast path: already claimed, so nothing to count and nothing to mint.

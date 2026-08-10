@@ -7,6 +7,7 @@ import { mockAnonymousSession } from "./helpers/auth";
 import { resetTestDatabase } from "./helpers/database";
 import {
   createCoupon,
+  createCustomer,
   createStoreOwner,
   seedCustomers,
 } from "./helpers/fixtures";
@@ -379,5 +380,76 @@ describe("API integration: claiming a public coupon", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("Cache-Control")).toBe("no-store, private");
+  });
+
+  describe("the card link", () => {
+    it("hands the card link ONLY to a customer this claim enrolled", async () => {
+      const { coupon, app } = await seed();
+
+      const first = await app.request(
+        `/api/public/coupon/${coupon.publicToken}/claim`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ phone: "11987654321" }),
+        },
+      );
+      const firstBody = (await first.json()) as { cardUrl: string | null };
+
+      expect(first.status).toBe(200);
+      expect(firstBody.cardUrl).toBeTruthy();
+    });
+
+    it("withholds the card link from anyone claiming for an EXISTING customer", async () => {
+      // The attack this closes: the campaign link is printed on a poster, so it
+      // is not a secret. Someone who also knows a phone NUMBER — not proof of
+      // owning the phone — used to receive that person's card link, and with it
+      // their visit history and every live single-use reward code.
+      const { coupon, app } = await seed();
+      const phone = "11987654321";
+      const claim = () =>
+        app.request(`/api/public/coupon/${coupon.publicToken}/claim`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ phone }),
+        });
+
+      const first = (await (await claim()).json()) as {
+        code: string;
+        cardUrl: string | null;
+      };
+      resetClaimRateLimit();
+      const second = (await (await claim()).json()) as {
+        code: string;
+        cardUrl: string | null;
+      };
+
+      // The code is still theirs and still the same — it is unique per
+      // (campaign, customer), so a repeat claimer can only ever see their own.
+      expect(second.code).toBe(first.code);
+      // The credential is not.
+      expect(second.cardUrl).toBeNull();
+    });
+
+    it("never returns a token belonging to a customer enrolled by another route", async () => {
+      const { store, coupon, app } = await seed();
+      const existing = await createCustomer(store.id, {
+        phone: "+5511987654321",
+      });
+
+      const response = await app.request(
+        `/api/public/coupon/${coupon.publicToken}/claim`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ phone: "11987654321" }),
+        },
+      );
+      const body = (await response.json()) as { cardUrl: string | null };
+      const raw = JSON.stringify(body);
+
+      expect(body.cardUrl).toBeNull();
+      expect(raw).not.toContain(existing.publicToken);
+    });
   });
 });

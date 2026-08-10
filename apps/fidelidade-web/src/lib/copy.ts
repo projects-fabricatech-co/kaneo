@@ -430,12 +430,20 @@ export const copy = {
 
   publicCoupon: {
     claimTitle: "Pegue seu cupom",
-    claimHint: "Informe seu celular para gerar o seu código.",
+    // Says out loud that claiming enrols them. The person typing their number is
+    // joining this shop's loyalty base, and a screen that only promises a code is
+    // collecting a phone number under a smaller pretext than the real one.
+    claimHint:
+      "Informe seu celular para gerar o seu código e começar seu cartão de fidelidade nesta loja.",
     claimAction: "Quero meu cupom",
     claiming: "Gerando...",
     yourCode: "Seu código",
     showAtStore: "Mostre este código na loja para usar.",
     seeMyCard: "Ver meu cartão de fidelidade",
+    // Shown INSTEAD of the link when the person was already a customer here. The
+    // card link is a credential and typing a number does not prove owning it.
+    alreadyHasCard:
+      "Você já tem um cartão nesta loja. Use o link que recebeu ou peça no balcão.",
     soldOutTitle: "Cupom esgotado",
     soldOutBody: "Todos os cupons desta campanha já foram resgatados.",
     notFoundTitle: "Campanha não encontrada",

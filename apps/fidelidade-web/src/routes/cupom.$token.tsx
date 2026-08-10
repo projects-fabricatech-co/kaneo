@@ -140,13 +140,19 @@ function PublicCouponRoute() {
                 {copy.card.expiresAt(formatDate(claimed.expiresAt))}
               </p>
             ) : null}
-            <Button
-              render={<a href={claimed.cardUrl} />}
-              variant="outline"
-              className="mt-1"
-            >
-              {copy.publicCoupon.seeMyCard}
-            </Button>
+            {claimed.cardUrl ? (
+              <Button
+                render={<a href={claimed.cardUrl} />}
+                variant="outline"
+                className="mt-1"
+              >
+                {copy.publicCoupon.seeMyCard}
+              </Button>
+            ) : (
+              <p className="mt-1 text-xs text-muted-foreground">
+                {copy.publicCoupon.alreadyHasCard}
+              </p>
+            )}
           </CardContent>
         </Card>
       ) : (

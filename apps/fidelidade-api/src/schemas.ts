@@ -567,7 +567,7 @@ export const claimPublicCouponSchema = v.object({
   code: v.string(),
   expiresAt: v.nullable(v.string()),
   /** `${FIDELIDADE_CLIENT_URL}/c/<token>` — the customer's own loyalty card. */
-  cardUrl: v.string(),
+  cardUrl: v.nullable(v.string()),
 });
 
 // ---------------------------------------------------------------------------
