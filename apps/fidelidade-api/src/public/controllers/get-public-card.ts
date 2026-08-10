@@ -13,6 +13,7 @@ import {
   storeTable,
 } from "../../database/schema";
 import { resolvePlanForStore } from "../../plans/resolve-plan";
+import { merchantTheme } from "../../utils/contrast";
 import { maskBrPhone } from "../../utils/phone";
 
 /**
@@ -37,6 +38,8 @@ export type PublicCardResponse = {
     name: string;
     logoUrl: string | null;
     brandColor: string;
+    /** Guaranteed readable against `brandColor`; see `utils/contrast.ts`. */
+    brandTextColor: string;
     city: string | null;
     whatsapp: string | null;
   };
@@ -234,12 +237,17 @@ async function getPublicCard(token: string): Promise<PublicCardResponse> {
     }
   }
 
+  const brand = merchantTheme(
+    limits.branding ? store.brandColor : DEFAULT_BRAND_COLOR,
+  );
+
   return {
     token: customer.publicToken,
     store: {
       name: store.name,
       logoUrl: limits.branding ? store.logoUrl : null,
-      brandColor: limits.branding ? store.brandColor : DEFAULT_BRAND_COLOR,
+      brandColor: brand.background,
+      brandTextColor: brand.foreground,
       city: store.city,
       whatsapp: store.whatsapp,
     },
@@ -249,17 +257,25 @@ async function getPublicCard(token: string): Promise<PublicCardResponse> {
       // is theirs, which is the only reason the number appears at all.
       phoneMasked: maskBrPhone(customer.phone),
     },
-    cards: cards.map((card) => ({
-      programName: card.programName,
-      rewardDescription: card.rewardDescription,
-      stampsCount: card.stampsCount,
-      stampsRequired: card.stampsRequired,
-      cardColor: card.cardColor,
-      cardTextColor: card.cardTextColor,
-      status: card.status,
-      cycle: card.cycle,
-      stampedAt: stampedByCard.get(card.id) ?? [],
-    })),
+    cards: cards.map((card) => {
+      // The pair is corrected at RENDER time, not only when it is saved: rows
+      // written before the check existed are still out there on customers'
+      // phones, and the person holding an unreadable card is the one who pays
+      // for trusting the stored value.
+      const theme = merchantTheme(card.cardColor, card.cardTextColor);
+
+      return {
+        programName: card.programName,
+        rewardDescription: card.rewardDescription,
+        stampsCount: card.stampsCount,
+        stampsRequired: card.stampsRequired,
+        cardColor: theme.background,
+        cardTextColor: theme.foreground,
+        status: card.status,
+        cycle: card.cycle,
+        stampedAt: stampedByCard.get(card.id) ?? [],
+      };
+    }),
     rewards: rewards.map((reward) => ({
       code: reward.code,
       description: reward.description,

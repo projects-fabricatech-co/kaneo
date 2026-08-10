@@ -5,6 +5,7 @@ import db, { schema } from "../../apps/fidelidade-api/src/database";
 import { createApp } from "../../apps/fidelidade-api/src/index";
 import type { PlanId } from "../../apps/fidelidade-api/src/plans/limits";
 import { DEFAULT_BRAND_COLOR } from "../../apps/fidelidade-api/src/public/controllers/get-public-card";
+import { contrastRatio } from "../../apps/fidelidade-api/src/utils/contrast";
 import { mockAnonymousSession, mockAuthenticatedSession } from "./helpers/auth";
 import { resetTestDatabase } from "./helpers/database";
 import {
@@ -111,6 +112,7 @@ describe("API integration: public card", () => {
 
     expect(Object.keys(body.store as object).sort()).toEqual([
       "brandColor",
+      "brandTextColor",
       "city",
       "logoUrl",
       "name",
@@ -355,6 +357,51 @@ describe("API integration: public card", () => {
     for (const key of forbidden) {
       expect(keys).not.toContain(key);
     }
+  });
+
+  it("hands back a text colour that can actually be read on the shop's colour", async () => {
+    // A lojista who picks pale yellow used to ship a card whose white text was
+    // invisible to the customer holding it. The correction happens on the way
+    // out, so rows written before the check existed are fixed too.
+    const { customer } = await seed({ plan: "pro", brandColor: "#FFF2C2" });
+    mockAnonymousSession();
+    const { app } = createApp();
+
+    const response = await app.request(
+      `/api/public/card/${customer.publicToken}`,
+    );
+    const body = (await response.json()) as {
+      store: { brandColor: string; brandTextColor: string };
+    };
+
+    expect(body.store.brandColor).toBe("#FFF2C2");
+    expect(
+      contrastRatio(body.store.brandColor, body.store.brandTextColor),
+    ).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("corrects an unreadable card pair the lojista saved", async () => {
+    const { store, customer } = await seed({ plan: "pro", stamps: 1 });
+    await db
+      .update(schema.programTable)
+      .set({ cardColor: "#FFFFFF", cardTextColor: "#FFFFFF" })
+      .where(eq(schema.programTable.storeId, store.id));
+    mockAnonymousSession();
+    const { app } = createApp();
+
+    const response = await app.request(
+      `/api/public/card/${customer.publicToken}`,
+    );
+    const body = (await response.json()) as {
+      cards: { cardColor: string; cardTextColor: string }[];
+    };
+    const card = body.cards[0];
+
+    expect(card).toBeDefined();
+    if (!card) return;
+    expect(
+      contrastRatio(card.cardColor, card.cardTextColor),
+    ).toBeGreaterThanOrEqual(4.5);
   });
 
   it("withholds custom branding on a plan that does not include it", async () => {

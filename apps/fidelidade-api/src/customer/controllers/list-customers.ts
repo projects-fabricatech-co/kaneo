@@ -33,7 +33,9 @@ function decodeCursor(raw: string): Cursor {
   const id = separator === -1 ? "" : decoded.slice(separator + 1);
 
   if (!createdAt || !id || Number.isNaN(Date.parse(createdAt))) {
-    throw new HTTPException(400, { message: "Cursor inválido" });
+    throw new HTTPException(400, {
+      message: "Não foi possível carregar esta página da lista",
+    });
   }
 
   return { createdAt, id };

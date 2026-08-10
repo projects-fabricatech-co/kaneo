@@ -51,7 +51,7 @@ export function StoreSwitcher({
         id="store-switcher"
         value={activeStoreId ?? ""}
         onChange={(event) => onSelect(event.target.value)}
-        className="min-w-0 truncate rounded-md border border-border bg-card px-2 py-1 text-sm font-medium"
+        className="min-h-11 min-w-0 truncate rounded-md border border-border bg-card px-2 py-1 text-sm font-medium sm:min-h-8"
       >
         {stores.map((store) => (
           <option key={store.id} value={store.id}>

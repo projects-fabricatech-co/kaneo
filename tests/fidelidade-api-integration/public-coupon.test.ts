@@ -51,7 +51,7 @@ describe("API integration: public coupon page", () => {
       ].sort(),
     );
     expect(Object.keys(body.store as object).sort()).toEqual(
-      ["brandColor", "city", "logoUrl", "name"].sort(),
+      ["brandColor", "brandTextColor", "city", "logoUrl", "name"].sort(),
     );
   });
 

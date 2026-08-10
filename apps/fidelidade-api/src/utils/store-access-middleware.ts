@@ -98,7 +98,9 @@ export function storeAccessMiddleware(config: StoreAccessMiddlewareConfig) {
     const userId = c.get("userId");
 
     if (!userId) {
-      throw new HTTPException(401, { message: "Unauthorized" });
+      throw new HTTPException(401, {
+        message: "Sua sessão expirou. Entre novamente.",
+      });
     }
 
     let storeId: string | null = null;

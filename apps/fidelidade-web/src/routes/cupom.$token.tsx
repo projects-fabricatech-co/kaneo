@@ -86,8 +86,11 @@ function PublicCouponRoute() {
         ) : (
           <div
             aria-hidden="true"
-            className="flex size-14 items-center justify-center rounded-lg text-xl font-semibold text-white"
-            style={{ backgroundColor: campaign.store.brandColor }}
+            className="flex size-14 items-center justify-center rounded-lg text-xl font-semibold"
+            style={{
+              backgroundColor: campaign.store.brandColor,
+              color: campaign.store.brandTextColor,
+            }}
           >
             {campaign.store.name.slice(0, 1).toUpperCase()}
           </div>

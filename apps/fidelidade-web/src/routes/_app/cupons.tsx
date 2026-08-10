@@ -171,7 +171,7 @@ function CuponsRoute() {
                       <FormControl>
                         <select
                           {...field}
-                          className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm"
+                          className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm sm:h-10"
                         >
                           <option value="percent">
                             {copy.coupon.typePercent}

@@ -19,7 +19,8 @@ function buildStore(overrides: Partial<PublicCard["store"]> = {}) {
   return {
     name: "Padaria da Esquina",
     logoUrl: null,
-    brandColor: "#4F46E5",
+    brandColor: "#D93825",
+    brandTextColor: "#FFFFFF",
     city: "São Paulo",
     whatsapp: null,
     ...overrides,

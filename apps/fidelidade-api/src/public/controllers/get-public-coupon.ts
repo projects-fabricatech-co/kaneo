@@ -4,6 +4,7 @@ import { isSoldOut, liveCouponWhere } from "../../coupon/coupon-window";
 import db from "../../database";
 import { couponTable, storeTable } from "../../database/schema";
 import { resolvePlanForStore } from "../../plans/resolve-plan";
+import { merchantTheme } from "../../utils/contrast";
 
 /** Matches `stores.brand_color`'s column default, as in `get-public-card.ts`. */
 const DEFAULT_BRAND_COLOR = "#D93825";
@@ -18,6 +19,8 @@ export type PublicCouponResponse = {
     name: string;
     logoUrl: string | null;
     brandColor: string;
+    /** Guaranteed readable against `brandColor`; see `utils/contrast.ts`. */
+    brandTextColor: string;
     city: string | null;
   };
 };
@@ -79,6 +82,10 @@ async function getPublicCoupon(token: string): Promise<PublicCouponResponse> {
   // public card, and for the same reason.
   const { limits } = await resolvePlanForStore(coupon.storeId);
 
+  const brand = merchantTheme(
+    limits.branding ? store.brandColor : DEFAULT_BRAND_COLOR,
+  );
+
   return {
     title: coupon.title,
     description: coupon.description,
@@ -90,7 +97,8 @@ async function getPublicCoupon(token: string): Promise<PublicCouponResponse> {
     store: {
       name: store.name,
       logoUrl: limits.branding ? store.logoUrl : null,
-      brandColor: limits.branding ? store.brandColor : DEFAULT_BRAND_COLOR,
+      brandColor: brand.background,
+      brandTextColor: brand.foreground,
       city: store.city,
     },
   };

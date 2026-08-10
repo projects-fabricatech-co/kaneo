@@ -11,6 +11,8 @@ export type PublicCardStore = {
   name: string;
   logoUrl: string | null;
   brandColor: string;
+  /** Computed server-side to be readable against `brandColor`. */
+  brandTextColor: string;
   city: string | null;
   whatsapp: string | null;
 };

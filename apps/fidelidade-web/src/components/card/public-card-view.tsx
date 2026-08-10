@@ -71,8 +71,11 @@ export function PublicCardView({ data }: PublicCardViewProps) {
         ) : (
           <div
             aria-hidden="true"
-            className="flex size-12 shrink-0 items-center justify-center rounded-lg text-lg font-semibold text-white"
-            style={{ backgroundColor: store.brandColor }}
+            className="flex size-12 shrink-0 items-center justify-center rounded-lg text-lg font-semibold"
+            style={{
+              backgroundColor: store.brandColor,
+              color: store.brandTextColor,
+            }}
           >
             {store.name.slice(0, 1).toUpperCase()}
           </div>

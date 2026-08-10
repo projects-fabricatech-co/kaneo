@@ -57,7 +57,9 @@ export async function authenticateApiRequest(c: Context): Promise<void> {
   const { token, malformed } = parseBearerToken(c.req.header("Authorization"));
 
   if (malformed) {
-    throw new HTTPException(401, { message: "Unauthorized" });
+    throw new HTTPException(401, {
+      message: "Sua sessão expirou. Entre novamente.",
+    });
   }
 
   if (token) {
@@ -71,7 +73,9 @@ export async function authenticateApiRequest(c: Context): Promise<void> {
       return;
     }
 
-    throw new HTTPException(401, { message: "Unauthorized" });
+    throw new HTTPException(401, {
+      message: "Sua sessão expirou. Entre novamente.",
+    });
   }
 
   const sessionResult = await getSession(c.req.raw.headers);
@@ -82,6 +86,8 @@ export async function authenticateApiRequest(c: Context): Promise<void> {
   c.set("userEmail", sessionResult?.user?.email ?? "");
 
   if (!sessionResult?.user) {
-    throw new HTTPException(401, { message: "Unauthorized" });
+    throw new HTTPException(401, {
+      message: "Sua sessão expirou. Entre novamente.",
+    });
   }
 }

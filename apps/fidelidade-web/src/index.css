@@ -32,6 +32,15 @@ input:-webkit-autofill:active {
 }
 
 @theme inline {
+  /* The design system's three motion tiers. Authored motion uses these names so
+     the vocabulary is shared; the vendored coss primitives sit at 150/200/250ms,
+     within a rounding error of the spec and not worth diverging from upstream
+     for. The number that actually matters is the 600ms ceiling: past that, a
+     celebration stops confirming and starts delaying. */
+  --duration-micro: 160ms;
+  --duration-state: 220ms;
+  --duration-celebrate: 600ms;
+
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --animate-skeleton: skeleton 2s -1s infinite linear;

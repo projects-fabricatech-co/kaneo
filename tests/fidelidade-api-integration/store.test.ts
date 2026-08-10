@@ -21,7 +21,9 @@ describe("API integration: stores", () => {
 
     expect(response.status).toBe(401);
     // HTTPException({ message }) renders as text, not JSON.
-    await expect(response.text()).resolves.toBe("Unauthorized");
+    await expect(response.text()).resolves.toBe(
+      "Sua sessão expirou. Entre novamente.",
+    );
   });
 
   it("leaves the health check public", async () => {
