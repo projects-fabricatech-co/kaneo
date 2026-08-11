@@ -30,6 +30,12 @@
   <img src="https://assets.kaneo.app/readme.png" alt="Kaneo Dashboard" />
 </p>
 
+> **Este fork também hospeda o Vale Desconto**, um SaaS de cartão de fidelidade
+> digital para o comércio local, em `apps/fidelidade-api` e `apps/fidelidade-web`.
+> É um produto separado, com banco, autenticação e portas próprias — não
+> compartilha nada com o Kaneo além do repositório.
+> **Como rodar na sua máquina e como o produto funciona: [VALE_DESCONTO.md](./VALE_DESCONTO.md).**
+
 ## Why Kaneo?
 
 After years of using bloated, overcomplicated project management platforms that distracted from actual work, we built Kaneo to be different.
