@@ -124,11 +124,12 @@ const publicRoutes = new Hono()
     ),
     async (c) => {
       const { token } = c.req.valid("param");
-
-      // Before any database work: a flood costs one hash.
-      consumeClaimAttempt(claimClientIp(c), token);
-
       const { phone, name } = c.req.valid("json");
+
+      // Before any database work: a flood costs two hashes. The phone is the
+      // primary axis — see the module comment for why keying on IP alone turned
+      // this into a denial of service against ordinary customers.
+      consumeClaimAttempt(claimClientIp(c), token, phone);
       const claimed = await claimPublicCouponCtrl(token, { phone, name });
 
       // The response carries the customer's own card link, which IS a secret.

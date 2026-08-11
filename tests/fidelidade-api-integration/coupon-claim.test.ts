@@ -331,9 +331,61 @@ describe("API integration: claiming a public coupon", () => {
     expect(await countRedemptions(coupon.id)).toBe(0);
   });
 
-  it("dampens a flood from one address with a 429", async () => {
-    // Not a security control — the header is spoofable and the window is in
-    // memory. It exists so a stuck retry loop cannot drain a campaign.
+  it("dampens one phone hammering one campaign", async () => {
+    // Not a security control — the window is in memory and the header is
+    // spoofable. It exists so a stuck retry loop cannot drain a campaign, and
+    // the phone is the axis worth bounding: a real person claims once.
+    const { coupon, app } = await seed();
+
+    const statuses: number[] = [];
+
+    for (let index = 0; index < 8; index += 1) {
+      const response = await app.request(
+        `/api/public/coupon/${coupon.publicToken}/claim`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ phone: "11988002000" }),
+        },
+      );
+      statuses.push(response.status);
+    }
+
+    expect(statuses.filter((status) => status === 429).length).toBeGreaterThan(
+      0,
+    );
+  });
+
+  it("does not punish a stranger for somebody else's flood", async () => {
+    // The regression this locks. Keyed on IP alone with a shared fallback
+    // bucket, seventeen requests locked the campaign for TEN MINUTES for every
+    // other caller — the limiter became a weapon against the customers it was
+    // meant to protect.
+    const { coupon, app } = await seed();
+
+    for (let index = 0; index < 20; index += 1) {
+      await app.request(`/api/public/coupon/${coupon.publicToken}/claim`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ phone: "11988002000" }),
+      });
+    }
+
+    const stranger = await app.request(
+      `/api/public/coupon/${coupon.publicToken}/claim`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ phone: "11955554444" }),
+      },
+    );
+
+    expect(stranger.status).toBe(200);
+  });
+
+  it("lets a whole table of friends claim from one address", async () => {
+    // A family, an office and a shopping-centre wifi all share one address and
+    // all legitimately claim the same campaign within minutes.
     const { coupon, app } = await seed();
 
     const statuses: number[] = [];
@@ -353,22 +405,7 @@ describe("API integration: claiming a public coupon", () => {
       statuses.push(response.status);
     }
 
-    expect(statuses.filter((status) => status === 200)).toHaveLength(16);
-    expect(statuses.slice(16)).toEqual([429, 429]);
-
-    // A different address is unaffected: the window is per IP and campaign.
-    const elsewhere = await app.request(
-      `/api/public/coupon/${coupon.publicToken}/claim`,
-      {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "x-forwarded-for": "198.51.100.4",
-        },
-        body: JSON.stringify({ phone: "11988003000" }),
-      },
-    );
-    expect(elsewhere.status).toBe(200);
+    expect(statuses.every((status) => status === 200)).toBe(true);
   });
 
   it("needs no session at all", async () => {
