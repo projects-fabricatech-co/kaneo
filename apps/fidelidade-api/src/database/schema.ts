@@ -642,3 +642,68 @@ export const stripeEventTable = pgTable("stripe_event", {
     .defaultNow()
     .notNull(),
 });
+
+/**
+ * Proof that a person agreed, and to WHAT.
+ *
+ * LGPD art. 8º, §1º puts the burden on the controller to demonstrate consent —
+ * and demonstrating it means being able to show the words the person read, not
+ * just a boolean. So this stores the version identifier of the text alongside
+ * the timestamp; the texts themselves are versioned in the web app under
+ * `content/legal/consentimento.ts` and are never edited in place.
+ *
+ * Only the coupon page writes here. The counter stamp does not: nobody clicks
+ * anything at the counter, so it runs on the lojista's legitimate interest and
+ * a consent row there would be a record of something that never happened.
+ *
+ * The IP is kept because a consent nobody can attribute is a consent nobody can
+ * defend, and dropped from every read path — nothing in the product ever shows
+ * it back.
+ */
+export const consentRecordTable = pgTable(
+  "consent_records",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    storeId: text("store_id")
+      .notNull()
+      .references(() => storeTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    customerId: text("customer_id")
+      .notNull()
+      .references(() => customerTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    /** Where the person consented. Today only `coupon_claim`. */
+    source: text("source").notNull(),
+    /** e.g. `consentimento-cupom-v1`. Points at an immutable published text. */
+    textVersion: text("text_version").notNull(),
+    /** The campaign token the person came through, when there was one. */
+    couponId: text("coupon_id").references(() => couponTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    ipAddress: text("ip_address"),
+    createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    // One row per (person, campaign, text). Makes the write idempotent under a
+    // refresh or a retried request, the same way the redemption itself is.
+    unique("consent_records_customer_coupon_version_unique").on(
+      table.customerId,
+      table.couponId,
+      table.textVersion,
+    ),
+    index("consent_records_customerId_idx").on(table.customerId),
+    index("consent_records_storeId_createdAt_idx").on(
+      table.storeId,
+      table.createdAt,
+    ),
+  ],
+);

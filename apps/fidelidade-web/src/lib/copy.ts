@@ -23,11 +23,20 @@ export const copy = {
     save: "Salvar",
     back: "Voltar",
     continue: "Continuar",
+    and: "e a",
     loading: "Carregando...",
     retry: "Tentar novamente",
     soon: "Em breve",
     genericError: "Algo deu errado. Tente novamente.",
     networkError: "Não conseguimos falar com o servidor. Tente em instantes.",
+  },
+
+  legal: {
+    privacy: "Privacidade",
+    terms: "Termos de uso",
+    // Shown on the end customer's pages. They never signed anything and have no
+    // account, so the link has to say what it is FOR, not just where it goes.
+    customerNotice: "Como seus dados são usados",
   },
 
   landing: {
@@ -168,6 +177,7 @@ export const copy = {
       nameRequired: "Informe seu nome.",
       toggleMessage: "Já tem uma conta?",
       toggleLink: "Entrar",
+      legalNotice: "Ao criar sua conta você concorda com os",
     },
 
     signOut: {

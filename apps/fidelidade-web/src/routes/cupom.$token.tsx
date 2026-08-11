@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Ticket } from "lucide-react";
 import { useState } from "react";
 import { isPhoneComplete, PhoneInput } from "@/components/stamp/phone-input";
@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CONSENTIMENTO_ATUAL } from "@/content/legal/consentimento";
 import claimPublicCoupon from "@/fetchers/public/claim-public-coupon";
 import getPublicCoupon from "@/fetchers/public/get-public-coupon";
 import { copy } from "@/lib/copy";
@@ -43,6 +44,7 @@ function PublicCouponRoute() {
   const { token } = Route.useParams();
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
+  const [consent, setConsent] = useState(false);
 
   const {
     data: campaign,
@@ -183,10 +185,36 @@ function PublicCouponRoute() {
               />
             </div>
 
+            {/* Unticked by default and blocking the button: a pre-ticked box is
+                not consent, and LGPD art. 8º wants an unambiguous act. The
+                44px row and the whole label being the target are the same
+                touch rule the rest of the app follows. */}
+            <label className="flex cursor-pointer items-start gap-3 text-sm">
+              <input
+                type="checkbox"
+                checked={consent}
+                onChange={(event) => setConsent(event.target.checked)}
+                disabled={claim.isPending}
+                className="mt-0.5 size-5 shrink-0 accent-primary"
+              />
+              <span className="flex flex-col gap-1">
+                <span className="text-pretty">{CONSENTIMENTO_ATUAL.label}</span>
+                <span className="text-pretty text-xs text-muted-foreground">
+                  {CONSENTIMENTO_ATUAL.hint}{" "}
+                  <Link
+                    to="/privacidade"
+                    className="underline underline-offset-4"
+                  >
+                    {copy.legal.privacy}
+                  </Link>
+                </span>
+              </span>
+            </label>
+
             <Button
               size="lg"
               className="w-full"
-              disabled={!isPhoneComplete(phone)}
+              disabled={!isPhoneComplete(phone) || !consent}
               loading={claim.isPending}
               onClick={() => {
                 claim.mutate(undefined, {
@@ -207,8 +235,13 @@ function PublicCouponRoute() {
         </Card>
       )}
 
-      <footer className="pb-2 text-center text-xs text-muted-foreground opacity-70">
-        {copy.card.poweredBy}
+      <footer className="flex flex-col gap-1 pb-2 text-center text-xs text-muted-foreground">
+        <p>
+          <Link to="/privacidade" className="underline underline-offset-4">
+            {copy.legal.customerNotice}
+          </Link>
+        </p>
+        <p className="opacity-70">{copy.card.poweredBy}</p>
       </footer>
     </main>
   );

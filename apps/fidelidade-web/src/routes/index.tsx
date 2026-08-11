@@ -266,6 +266,20 @@ function LandingRoute() {
           <p className="text-sm text-muted-foreground">
             {copy.landing.footerTagline}
           </p>
+          <div className="flex gap-4 pt-1 text-sm">
+            <Link
+              to="/privacidade"
+              className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            >
+              {copy.legal.privacy}
+            </Link>
+            <Link
+              to="/termos"
+              className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            >
+              {copy.legal.terms}
+            </Link>
+          </div>
           <p className="text-xs text-muted-foreground">
             {copy.landing.footerRights(new Date().getFullYear())}
           </p>

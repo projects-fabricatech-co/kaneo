@@ -4,7 +4,11 @@ import { liveCouponWhere } from "../../coupon/coupon-window";
 import findOrCreateCustomer from "../../customer/controllers/find-or-create-customer";
 import db from "../../database";
 import type { DatabaseExecutor } from "../../database/executor";
-import { couponRedemptionTable, couponTable } from "../../database/schema";
+import {
+  consentRecordTable,
+  couponRedemptionTable,
+  couponTable,
+} from "../../database/schema";
 import { rewardExpiresAt } from "../../reward/reward-expiry";
 import { generateShortCode } from "../../utils/short-code";
 import { publicCouponNotFoundError } from "./get-public-coupon";
@@ -15,6 +19,15 @@ const MAX_CODE_ATTEMPTS = 5;
 export type ClaimPublicCouponInput = {
   phone: string;
   name?: string | null;
+  /**
+   * Identifier of the consent text the person ticked. Not optional: this is the
+   * one place in the product where a customer enrols themselves, so it is the
+   * one place where consent is the legal basis, and LGPD art. 8º, §1º puts the
+   * burden of demonstrating it on the controller.
+   */
+  consentVersion: string;
+  /** Recorded with the consent so it can be attributed. Never read back. */
+  consentIp?: string | null;
 };
 
 export type ClaimPublicCouponResult = {
@@ -159,6 +172,33 @@ async function claimPublicCoupon(
    * counter.
    */
   const cardUrl = created ? cardUrlFor(customer.publicToken) : null;
+
+  /**
+   * The consent is recorded HERE — pinned to the enrolment above, not to the
+   * code below.
+   *
+   * The tempting place is inside the transaction, next to the code, so that
+   * consent and benefit commit together. It is the wrong place: step 0 already
+   * put this person in the store's base, and it does so even when the campaign
+   * turns out to be full. Recording the consent only on a successful claim
+   * would leave exactly the people whose claim failed sitting in the base with
+   * no record of what they agreed to — the one case where the record matters
+   * most, because they got nothing in return for the data.
+   *
+   * Conflicts are swallowed: a refresh, a retry, or a second scan is the same
+   * agreement to the same text, not a new one. See the unique index.
+   */
+  await db
+    .insert(consentRecordTable)
+    .values({
+      storeId: coupon.storeId,
+      customerId: customer.id,
+      couponId: coupon.id,
+      source: "coupon_claim",
+      textVersion: input.consentVersion,
+      ipAddress: input.consentIp ?? null,
+    })
+    .onConflictDoNothing();
 
   const redemption = await db.transaction(async (tx) => {
     // 1. Fast path: already claimed, so nothing to count and nothing to mint.

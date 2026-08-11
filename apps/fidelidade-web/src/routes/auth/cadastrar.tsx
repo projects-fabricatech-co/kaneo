@@ -186,6 +186,20 @@ function SignUpRoute() {
         {isGoogleLoading ? copy.auth.connecting : copy.auth.continueWithGoogle}
       </Button>
 
+      {/* Section 1 of the Termos says signing up is the acceptance. That is only
+          honest if the texts are one tap away from the button that does it. */}
+      <p className="text-center text-xs text-muted-foreground">
+        {copy.auth.signUp.legalNotice}{" "}
+        <Link to="/termos" className="underline underline-offset-4">
+          {copy.legal.terms}
+        </Link>{" "}
+        {copy.common.and}{" "}
+        <Link to="/privacidade" className="underline underline-offset-4">
+          {copy.legal.privacy}
+        </Link>
+        .
+      </p>
+
       <p className="text-center text-sm text-muted-foreground">
         {copy.auth.signUp.toggleMessage}{" "}
         <Link

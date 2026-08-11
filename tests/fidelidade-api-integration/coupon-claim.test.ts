@@ -1,8 +1,9 @@
-import { count, eq } from "drizzle-orm";
+import { and, count, eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 import db, { schema } from "../../apps/fidelidade-api/src/database";
 import { createApp } from "../../apps/fidelidade-api/src/index";
 import { resetClaimRateLimit } from "../../apps/fidelidade-api/src/public/claim-rate-limit";
+import { CONSENT_VERSIONS } from "../../apps/fidelidade-api/src/public/consent-versions";
 import { mockAnonymousSession } from "./helpers/auth";
 import { resetTestDatabase } from "./helpers/database";
 import {
@@ -24,6 +25,8 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  * The concurrency cases come FIRST on purpose. They are the reason the ordering
  * in `claim-public-coupon.ts` is what it is.
  */
+const [CONSENT_VERSION] = CONSENT_VERSIONS;
+
 describe("API integration: claiming a public coupon", () => {
   beforeEach(async () => {
     await resetTestDatabase();
@@ -52,7 +55,9 @@ describe("API integration: claiming a public coupon", () => {
     return app.request(`/api/public/coupon/${token}/claim`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify(body),
+      // Consent is required by the endpoint; the tests below are about the cap
+      // and the idempotency, so it is supplied here rather than in each case.
+      body: JSON.stringify({ consentVersion: CONSENT_VERSION, ...body }),
     });
   }
 
@@ -345,7 +350,10 @@ describe("API integration: claiming a public coupon", () => {
         {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ phone: "11988002000" }),
+          body: JSON.stringify({
+            phone: "11988002000",
+            consentVersion: CONSENT_VERSION,
+          }),
         },
       );
       statuses.push(response.status);
@@ -367,7 +375,10 @@ describe("API integration: claiming a public coupon", () => {
       await app.request(`/api/public/coupon/${coupon.publicToken}/claim`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ phone: "11988002000" }),
+        body: JSON.stringify({
+          phone: "11988002000",
+          consentVersion: CONSENT_VERSION,
+        }),
       });
     }
 
@@ -376,7 +387,10 @@ describe("API integration: claiming a public coupon", () => {
       {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ phone: "11955554444" }),
+        body: JSON.stringify({
+          phone: "11955554444",
+          consentVersion: CONSENT_VERSION,
+        }),
       },
     );
 
@@ -399,7 +413,10 @@ describe("API integration: claiming a public coupon", () => {
             "content-type": "application/json",
             "x-forwarded-for": "203.0.113.7",
           },
-          body: JSON.stringify({ phone: `1198800${2000 + index}` }),
+          body: JSON.stringify({
+            phone: `1198800${2000 + index}`,
+            consentVersion: CONSENT_VERSION,
+          }),
         },
       );
       statuses.push(response.status);
@@ -419,6 +436,110 @@ describe("API integration: claiming a public coupon", () => {
     expect(response.headers.get("Cache-Control")).toBe("no-store, private");
   });
 
+  describe("the consent record", () => {
+    async function consents(customerId: string) {
+      return db
+        .select()
+        .from(schema.consentRecordTable)
+        .where(eq(schema.consentRecordTable.customerId, customerId));
+    }
+
+    async function customerByPhone(storeId: string, phone: string) {
+      const [row] = await db
+        .select()
+        .from(schema.customerTable)
+        .where(
+          and(
+            eq(schema.customerTable.storeId, storeId),
+            eq(schema.customerTable.phone, phone),
+          ),
+        );
+
+      expect(row).toBeTruthy();
+      return row;
+    }
+
+    it("stores WHICH text the person agreed to, not just that they did", async () => {
+      // A boolean proves nothing. LGPD art. 8º, §1º asks the controller to
+      // demonstrate the consent, and that means showing the words.
+      const { store, coupon, app } = await seed();
+
+      await claim(app, coupon.publicToken, { phone: "11988001234" });
+
+      const customer = await customerByPhone(store.id, "+5511988001234");
+      const [record] = await consents(customer.id);
+
+      expect(record.textVersion).toBe(CONSENT_VERSION);
+      expect(record.source).toBe("coupon_claim");
+      expect(record.couponId).toBe(coupon.id);
+      expect(record.storeId).toBe(store.id);
+    });
+
+    it("refuses a claim with no consent at all", async () => {
+      const { coupon, app } = await seed();
+
+      const response = await app.request(
+        `/api/public/coupon/${coupon.publicToken}/claim`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ phone: "11988001234" }),
+        },
+      );
+
+      expect(response.status).toBe(400);
+    });
+
+    it("refuses a consent version that does not exist", async () => {
+      // Otherwise the ledger fills with agreement to texts nobody was shown,
+      // which is worse than an empty ledger because it looks like proof.
+      const { coupon, app } = await seed();
+
+      const response = await claim(app, coupon.publicToken, {
+        phone: "11988001234",
+        consentVersion: "texto-que-nunca-existiu",
+      });
+
+      expect(response.status).toBe(400);
+    });
+
+    it("does not stack a row when the same person claims twice", async () => {
+      const { store, coupon, app } = await seed();
+
+      await claim(app, coupon.publicToken, { phone: "11988001234" });
+      resetClaimRateLimit();
+      await claim(app, coupon.publicToken, { phone: "11988001234" });
+
+      const customer = await customerByPhone(store.id, "+5511988001234");
+
+      expect(await consents(customer.id)).toHaveLength(1);
+    });
+
+    it("still records it when the campaign turned out to be full", async () => {
+      // Claiming enrols the person BEFORE the cap is checked — a documented
+      // product decision. So the person whose claim failed is in the base with
+      // nothing in return, which is exactly when the record of what they
+      // agreed to matters most. Pinning the consent to the code instead of the
+      // enrolment would lose it for precisely those people.
+      const { store, coupon, app } = await seed({ maxRedemptions: 1 });
+
+      await claim(app, coupon.publicToken, { phone: "11988001111" });
+      resetClaimRateLimit();
+      const refused = await claim(app, coupon.publicToken, {
+        phone: "11988002222",
+      });
+
+      expect(refused.status).toBe(409);
+
+      const [row] = await db
+        .select({ value: count() })
+        .from(schema.consentRecordTable)
+        .where(eq(schema.consentRecordTable.storeId, store.id));
+
+      expect(Number(row?.value ?? 0)).toBe(2);
+    });
+  });
+
   describe("the card link", () => {
     it("hands the card link ONLY to a customer this claim enrolled", async () => {
       const { coupon, app } = await seed();
@@ -428,7 +549,10 @@ describe("API integration: claiming a public coupon", () => {
         {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ phone: "11987654321" }),
+          body: JSON.stringify({
+            phone: "11987654321",
+            consentVersion: CONSENT_VERSION,
+          }),
         },
       );
       const firstBody = (await first.json()) as { cardUrl: string | null };
@@ -448,7 +572,7 @@ describe("API integration: claiming a public coupon", () => {
         app.request(`/api/public/coupon/${coupon.publicToken}/claim`, {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ phone }),
+          body: JSON.stringify({ phone, consentVersion: CONSENT_VERSION }),
         });
 
       const first = (await (await claim()).json()) as {
@@ -479,7 +603,10 @@ describe("API integration: claiming a public coupon", () => {
         {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ phone: "11987654321" }),
+          body: JSON.stringify({
+            phone: "11987654321",
+            consentVersion: CONSENT_VERSION,
+          }),
         },
       );
       const body = (await response.json()) as { cardUrl: string | null };

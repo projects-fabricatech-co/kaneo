@@ -184,6 +184,15 @@ export function PublicCardView({ data }: PublicCardViewProps) {
           </p>
         ) : null}
         <p>{copy.card.savedHint}</p>
+        {/* The customer never signed up and never saw a policy. This link is
+            the only way they can find out what happens to their number — it is
+            required, not courtesy. A plain <a> because this component renders
+            in tests outside a router. */}
+        <p className="pt-1">
+          <a href="/privacidade" className="underline underline-offset-4">
+            {copy.legal.customerNotice}
+          </a>
+        </p>
         <p className="pt-1 opacity-70">{copy.card.poweredBy}</p>
       </footer>
     </div>

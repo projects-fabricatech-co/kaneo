@@ -21,6 +21,7 @@ import { resolveDatabaseConnectionString } from "./resolve-database-url";
 import {
   accountTable,
   cardTable,
+  consentRecordTable,
   couponRedemptionTable,
   couponTable,
   customerTable,
@@ -41,6 +42,7 @@ config();
 export const schema = {
   accountTable,
   cardTable,
+  consentRecordTable,
   couponRedemptionTable,
   couponTable,
   customerTable,

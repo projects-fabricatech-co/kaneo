@@ -15,6 +15,13 @@
 			"when": 1786319354508,
 			"tag": "0001_greedy_avengers",
 			"breakpoints": true
+		},
+		{
+			"idx": 2,
+			"version": "7",
+			"when": 1786414112068,
+			"tag": "0002_flowery_molly_hayes",
+			"breakpoints": true
 		}
 	]
 }

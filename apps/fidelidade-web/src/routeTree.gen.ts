@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as PrivacidadeRouteImport } from './routes/privacidade'
+import { Route as TermosRouteImport } from './routes/termos'
 import { Route as AppCarimbarRouteImport } from './routes/_app/carimbar'
 import { Route as AppClientesRouteImport } from './routes/_app/clientes'
 import { Route as AppCuponsRouteImport } from './routes/_app/cupons'
@@ -36,6 +38,16 @@ const AppRoute = AppRouteImport.update({
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacidadeRoute = PrivacidadeRouteImport.update({
+  id: '/privacidade',
+  path: '/privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermosRoute = TermosRouteImport.update({
+  id: '/termos',
+  path: '/termos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppCarimbarRoute = AppCarimbarRouteImport.update({
@@ -97,6 +109,8 @@ const CupomTokenRoute = CupomTokenRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/onboarding': typeof OnboardingRoute
+  '/privacidade': typeof PrivacidadeRoute
+  '/termos': typeof TermosRoute
   '/carimbar': typeof AppCarimbarRoute
   '/clientes': typeof AppClientesRoute
   '/cupons': typeof AppCuponsRoute
@@ -112,6 +126,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/onboarding': typeof OnboardingRoute
+  '/privacidade': typeof PrivacidadeRoute
+  '/termos': typeof TermosRoute
   '/carimbar': typeof AppCarimbarRoute
   '/clientes': typeof AppClientesRoute
   '/cupons': typeof AppCuponsRoute
@@ -129,6 +145,8 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/onboarding': typeof OnboardingRoute
+  '/privacidade': typeof PrivacidadeRoute
+  '/termos': typeof TermosRoute
   '/_app/carimbar': typeof AppCarimbarRoute
   '/_app/clientes': typeof AppClientesRoute
   '/_app/cupons': typeof AppCuponsRoute
@@ -146,6 +164,8 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/onboarding'
+    | '/privacidade'
+    | '/termos'
     | '/carimbar'
     | '/clientes'
     | '/cupons'
@@ -161,6 +181,8 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/onboarding'
+    | '/privacidade'
+    | '/termos'
     | '/carimbar'
     | '/clientes'
     | '/cupons'
@@ -177,6 +199,8 @@ export interface FileRouteTypes {
     | '/'
     | '/_app'
     | '/onboarding'
+    | '/privacidade'
+    | '/termos'
     | '/_app/carimbar'
     | '/_app/clientes'
     | '/_app/cupons'
@@ -194,6 +218,8 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   OnboardingRoute: typeof OnboardingRoute
+  PrivacidadeRoute: typeof PrivacidadeRoute
+  TermosRoute: typeof TermosRoute
   AuthCadastrarRoute: typeof AuthCadastrarRoute
   AuthEntrarRoute: typeof AuthEntrarRoute
   CTokenRoute: typeof CTokenRoute
@@ -221,6 +247,20 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacidade': {
+      id: '/privacidade'
+      path: '/privacidade'
+      fullPath: '/privacidade'
+      preLoaderRoute: typeof PrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/termos': {
+      id: '/termos'
+      path: '/termos'
+      fullPath: '/termos'
+      preLoaderRoute: typeof TermosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/carimbar': {
@@ -329,6 +369,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   OnboardingRoute: OnboardingRoute,
+  PrivacidadeRoute: PrivacidadeRoute,
+  TermosRoute: TermosRoute,
   AuthCadastrarRoute: AuthCadastrarRoute,
   AuthEntrarRoute: AuthEntrarRoute,
   CTokenRoute: CTokenRoute,

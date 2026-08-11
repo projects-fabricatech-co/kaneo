@@ -1,3 +1,4 @@
+import { CONSENTIMENTO_ATUAL } from "@/content/legal/consentimento";
 import { apiError } from "@/lib/api-error";
 import { client } from "@/lib/hono";
 
@@ -12,7 +13,10 @@ async function claimPublicCoupon(
 ) {
   const response = await client.public.coupon[":token"].claim.$post({
     param: { token },
-    json: input,
+    // The version travels with the claim rather than being assumed by the
+    // server, so the ledger records the text THIS bundle actually displayed —
+    // a cached page showing an older wording must not be recorded as the new one.
+    json: { ...input, consentVersion: CONSENTIMENTO_ATUAL.version },
   });
 
   if (!response.ok) {
