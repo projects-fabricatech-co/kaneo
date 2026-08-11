@@ -34,6 +34,7 @@ export const copy = {
   legal: {
     privacy: "Privacidade",
     terms: "Termos de uso",
+    readPolicy: "Ler a Política de Privacidade",
     // Shown on the end customer's pages. They never signed anything and have no
     // account, so the link has to say what it is FOR, not just where it goes.
     customerNotice: "Como seus dados são usados",

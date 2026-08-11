@@ -199,17 +199,21 @@ function PublicCouponRoute() {
               />
               <span className="flex flex-col gap-1">
                 <span className="text-pretty">{CONSENTIMENTO_ATUAL.label}</span>
+                {/* The hint stays whole: it is a stored legal text and has to
+                    stand on its own in the record, so the link goes on its own
+                    line instead of being spliced into the sentence. */}
                 <span className="text-pretty text-xs text-muted-foreground">
-                  {CONSENTIMENTO_ATUAL.hint}{" "}
-                  <Link
-                    to="/privacidade"
-                    className="underline underline-offset-4"
-                  >
-                    {copy.legal.privacy}
-                  </Link>
+                  {CONSENTIMENTO_ATUAL.hint}
                 </span>
               </span>
             </label>
+
+            <Link
+              to="/privacidade"
+              className="-mt-2 self-start text-xs text-muted-foreground underline underline-offset-4"
+            >
+              {copy.legal.readPolicy}
+            </Link>
 
             <Button
               size="lg"
