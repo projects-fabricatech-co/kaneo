@@ -18,16 +18,17 @@ export const IDENTIDADE = {
   endereco:
     "Tv. São José, 455 — Navegantes, Porto Alegre/RS, CEP 90240-200, Brasil",
   /**
-   * Canal do titular (LGPD Art. 18) e do encarregado (Art. 41).
+   * Canal do titular (LGPD Art. 18) e do encarregado (Art. 41), mais o suporte
+   * ao lojista. Uma caixa só, que EXISTE e é lida — melhor que três endereços
+   * bonitos que ninguém atende, porque a política promete resposta em 15 dias.
    *
-   * ATENÇÃO: estas caixas precisam EXISTIR e ser lidas. Uma política que
-   * publica um endereço que ninguém atende é pior que não ter canal — ela
-   * documenta uma obrigação de 15 dias que você não vai cumprir.
+   * Se um dia virarem caixas próprias em valedesconto.com.br, troque aqui: o
+   * texto inteiro lê deste arquivo.
    */
-  emailPrivacidade: "privacidade@valedesconto.com.br",
-  emailSuporte: "suporte@valedesconto.com.br",
-  /** TODO: nome do encarregado pelo tratamento de dados (LGPD Art. 41). */
-  encarregado: "TODO — nome do encarregado",
+  emailPrivacidade: "contato@fabricatech.co",
+  emailSuporte: "contato@fabricatech.co",
+  /** Encarregado pelo tratamento de dados (LGPD Art. 41). */
+  encarregado: "David Melo",
   site: "https://valedesconto.com.br",
   /** Derivado da sede: comarca do endereço acima. */
   foro: "Porto Alegre, Rio Grande do Sul",

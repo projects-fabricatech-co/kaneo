@@ -1,14 +1,11 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Kaneo Documentation
+  - name: Como rodar o Vale Desconto
+    url: https://github.com/projects-fabricatech-co/kaneo#rodando-na-sua-máquina
+    about: Setup local, variáveis de ambiente e comandos do dia a dia
+  - name: O que já está planejado
+    url: https://github.com/projects-fabricatech-co/kaneo/blob/main/ROADMAP.md
+    about: Segurança em aberto, pendências jurídicas e as fases da gestão da plataforma
+  - name: Documentação do Kaneo
     url: https://kaneo.app/docs/core
-    about: Check our documentation for answers to common questions
-  - name: Kaneo Discord Community
-    url: https://discord.gg/rU4tSyhXXU
-    about: Join our Discord server to chat with the community and get help
-  - name: GitHub Discussions
-    url: https://github.com/orgs/usekaneo/discussions
-    about: For general questions and discussions about Kaneo
-  - name: Support Kaneo
-    url: https://github.com/sponsors/andrejsshell
-    about: Help keep Kaneo maintained and evolving
+    about: Para o Kaneo, o projeto open source em cima do qual este repositório foi montado
