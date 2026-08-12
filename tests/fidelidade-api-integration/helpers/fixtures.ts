@@ -6,6 +6,7 @@ import {
   couponRedemptionTable,
   couponTable,
   customerTable,
+  platformAdminTable,
   programTable,
   rewardTable,
   stampTable,
@@ -435,4 +436,23 @@ export async function seedTwoIsolatedStores() {
   const b = await createStoreOwner({ storeName: "Padaria B" });
 
   return { a, b };
+}
+
+/**
+ * A user who administers the platform.
+ *
+ * `revokedAt` is settable so the revoked case can be seeded directly rather than
+ * granted and then taken away — the grant path is not what those tests are about.
+ */
+export async function createPlatformAdmin(
+  overrides: { revokedAt?: Date } = {},
+): Promise<SeededUser> {
+  const user = await createUser();
+
+  await db.insert(platformAdminTable).values({
+    userId: user.id,
+    revokedAt: overrides.revokedAt ?? null,
+  });
+
+  return user;
 }

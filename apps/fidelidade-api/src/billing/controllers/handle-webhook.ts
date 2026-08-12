@@ -5,6 +5,7 @@ import db from "../../database";
 import type { DatabaseExecutor } from "../../database/executor";
 import {
   stripeEventTable,
+  stripeWebhookFailureTable,
   subscriptionTable,
   userTable,
 } from "../../database/schema";
@@ -275,6 +276,38 @@ async function applyEvent(
   }
 }
 
+/**
+ * Records a delivery that did not land, on the POOL connection.
+ *
+ * Never `tx`. The whole reason a failed apply is invisible today is that it
+ * rolls its own claim back; writing the evidence into that same transaction
+ * would roll the evidence back with it.
+ *
+ * Swallows its own errors on purpose. This runs while another failure is already
+ * being handled, and a telemetry write that can itself throw would replace the
+ * real error — the one Stripe needs to see as a 4xx or 5xx — with a database
+ * error about the logging.
+ */
+async function recordWebhookFailure(entry: {
+  eventId?: string | null;
+  eventType?: string | null;
+  reason: "signature" | "apply_error";
+  message?: string | null;
+}): Promise<void> {
+  try {
+    await db.insert(stripeWebhookFailureTable).values({
+      eventId: entry.eventId ?? null,
+      eventType: entry.eventType ?? null,
+      reason: entry.reason,
+      // Capped: a stack trace from a driver can run to kilobytes, and this table
+      // is read by a page that shows the last twenty rows.
+      message: entry.message?.slice(0, 1000) ?? null,
+    });
+  } catch (error) {
+    console.error("fidelidade: failed to record webhook failure", error);
+  }
+}
+
 async function handleWebhook(
   rawBody: string,
   signature: string | null,
@@ -283,7 +316,12 @@ async function handleWebhook(
 
   try {
     event = constructWebhookEvent(rawBody, signature);
-  } catch {
+  } catch (error) {
+    await recordWebhookFailure({
+      reason: "signature",
+      message: error instanceof Error ? error.message : String(error),
+    });
+
     // 400, not 500: a payload that fails the HMAC will fail it again on every
     // retry, and the error text is never surfaced — it would only tell a
     // forger which part of their signature was wrong.
@@ -299,21 +337,35 @@ async function handleWebhook(
   // Keeping the apply inside the same transaction matters just as much: if it
   // throws, the claim rolls back with it, so Stripe's retry is re-applied
   // instead of being swallowed as a duplicate of an event that never landed.
-  return db.transaction(async (tx) => {
-    const [claimed] = await tx
-      .insert(stripeEventTable)
-      .values({ id: event.id, eventType: event.type })
-      .onConflictDoNothing({ target: stripeEventTable.id })
-      .returning({ id: stripeEventTable.id });
+  try {
+    return await db.transaction(async (tx) => {
+      const [claimed] = await tx
+        .insert(stripeEventTable)
+        .values({ id: event.id, eventType: event.type })
+        .onConflictDoNothing({ target: stripeEventTable.id })
+        .returning({ id: stripeEventTable.id });
 
-    if (!claimed) {
-      return { received: true, outcome: "duplicate" };
-    }
+      if (!claimed) {
+        return { received: true, outcome: "duplicate" };
+      }
 
-    const applied = await applyEvent(tx, event);
+      const applied = await applyEvent(tx, event);
 
-    return { received: true, outcome: applied ? "processed" : "ignored" };
-  });
+      return { received: true, outcome: applied ? "processed" : "ignored" };
+    });
+  } catch (error) {
+    await recordWebhookFailure({
+      eventId: event.id,
+      eventType: event.type,
+      reason: "apply_error",
+      message: error instanceof Error ? error.message : String(error),
+    });
+
+    // Rethrown, not handled. The claim has already rolled back, so Stripe's
+    // retry has to reach the same code path and try again; swallowing this here
+    // would answer 200 to an event that was never applied.
+    throw error;
+  }
 }
 
 export default handleWebhook;

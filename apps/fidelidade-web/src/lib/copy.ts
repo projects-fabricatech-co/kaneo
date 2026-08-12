@@ -509,6 +509,79 @@ export const copy = {
     // leads and Vale Desconto signs discreetly underneath.
     poweredBy: "Fidelidade digital por Vale Desconto",
   },
+
+  /**
+   * The owner's console — the one surface whose reader is us, not a lojista.
+   *
+   * The design system's voice rules ("falamos em clientes, visitas, carimbos",
+   * never in operations) govern the screens a lojista and a customer see. Here
+   * MRR, churn, webhook and latência are the accurate words, and softening them
+   * would hide information from the only person who can act on it. A deliberate
+   * exception, written down so it does not spread by accident.
+   */
+  admin: {
+    shellTitle: "Plataforma",
+    shellSubtitle: "Console do dono",
+    backToApp: "Voltar ao app",
+    navMetrics: "Métricas",
+    navHealth: "Saúde",
+    navAudit: "Auditoria",
+
+    metricsTitle: "Como está o negócio",
+    metricsSubtitle: (timezone: string) =>
+      `Números da plataforma inteira. Dias contados no fuso ${timezone}.`,
+    mrr: "MRR",
+    mrrHint: "Preço de tabela das assinaturas ativas, anual dividido por 12",
+    payingAccounts: "Contas pagantes",
+    trialingAccounts: "Em teste",
+    pastDueAccounts: "Em atraso",
+    accounts: "Contas",
+    stores: "Lojas",
+    customers: "Clientes finais",
+    stampsToday: "Carimbos hoje",
+    stampsWeek: "Carimbos em 7 dias",
+    stampsMonth: "Carimbos em 30 dias",
+    paidConversion: "Conversão para pago",
+    churn30d: "Churn em 30 dias",
+    planBreakdownTitle: "Assinaturas por plano",
+    planBreakdownEmpty: "Nenhuma assinatura ainda.",
+    chartTitle: "Carimbos por dia",
+    chartEmpty: "Nenhum carimbo no período.",
+    mrrCaveat:
+      "Preço de tabela. Desconto ou cupom aplicado na Stripe não aparece aqui, então o valor pode divergir do painel deles.",
+
+    healthTitle: "O sistema está de pé",
+    healthSubtitle: "Stripe, banco e a versão que está no ar.",
+    billingConfigured: "Stripe configurado",
+    billingNotConfigured: "Stripe não configurado",
+    lastStripeEvent: "Último evento do Stripe",
+    lastStripeEventNever: "Nenhum evento recebido ainda",
+    stripeEvents24h: "Eventos em 24 h",
+    stripeEventsEmpty: "Nenhum evento nas últimas 24 horas.",
+    webhookFailures: "Falhas de webhook em 24 h",
+    webhookFailuresEmpty: "Nenhuma falha registrada.",
+    recentFailuresTitle: "Falhas recentes",
+    databaseLatency: "Latência do banco",
+    migration: "Migração aplicada",
+    migrationNever: "Nenhuma migração registrada",
+    statusOk: "Normal",
+    statusAttention: "Atenção",
+
+    auditTitle: "Quem olhou o quê",
+    auditSubtitle:
+      "Toda ação administrativa, do mais recente para o mais antigo. Abrir esta página também entra na lista.",
+    auditEmpty: "Nenhuma ação registrada ainda.",
+    auditWhen: "Quando",
+    auditWho: "Quem",
+    auditAction: "Ação",
+    auditTarget: "Alvo",
+    auditReason: "Motivo",
+    auditNoReason: "—",
+    auditNewer: "Mais recentes",
+    auditOlder: "Mais antigos",
+
+    error: "Não foi possível carregar os dados da plataforma.",
+  },
 } as const;
 
 export type Copy = typeof copy;

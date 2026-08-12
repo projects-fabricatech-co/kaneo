@@ -20,11 +20,13 @@ import {
 import { resolveDatabaseConnectionString } from "./resolve-database-url";
 import {
   accountTable,
+  adminAuditLogTable,
   cardTable,
   consentRecordTable,
   couponRedemptionTable,
   couponTable,
   customerTable,
+  platformAdminTable,
   programTable,
   rewardTable,
   sessionTable,
@@ -32,6 +34,7 @@ import {
   storeMemberTable,
   storeTable,
   stripeEventTable,
+  stripeWebhookFailureTable,
   subscriptionTable,
   userTable,
   verificationTable,
@@ -41,11 +44,13 @@ config();
 
 export const schema = {
   accountTable,
+  adminAuditLogTable,
   cardTable,
   consentRecordTable,
   couponRedemptionTable,
   couponTable,
   customerTable,
+  platformAdminTable,
   programTable,
   rewardTable,
   sessionTable,
@@ -53,6 +58,7 @@ export const schema = {
   storeMemberTable,
   storeTable,
   stripeEventTable,
+  stripeWebhookFailureTable,
   subscriptionTable,
   userTable,
   verificationTable,

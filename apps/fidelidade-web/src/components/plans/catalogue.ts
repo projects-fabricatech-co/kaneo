@@ -9,6 +9,9 @@ import type { PlanOffer } from "./plan-card";
  * resolves the real Stripe price from its own environment. A client that could
  * name the price it wants to pay is a client that can pick its own price.
  *
+ * The enforcing copy is `PLAN_PRICE_CENTS` in the API's `billing/config.ts`,
+ * which is what the admin console adds up into MRR. Change one, change the other.
+ *
  * The limits mirror `PLAN_LIMITS` in the API, which is the enforcing copy — this
  * one only decides which feature lines get a check and which get a strike.
  */
