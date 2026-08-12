@@ -1,6 +1,6 @@
 ---
 name: Question or Help
-about: Ask a question or request help with Kaneo
+about: Tire uma dúvida ou peça ajuda com o Vale Desconto
 title: 'question: '
 labels: question
 assignees: ''
@@ -16,7 +16,7 @@ Steps you've already taken to find an answer:
 3. Tried to...
 
 ## Environment (if relevant)
-- Kaneo Version: [e.g., 1.0.0]
+- Commit ou versão: [ex.: e823f36]
 - Deployment Method: [e.g., Docker, Kubernetes, etc.]
 - Browser: [e.g., Chrome, Firefox]
 - OS: [e.g., Windows, macOS, Linux]
