@@ -14,6 +14,10 @@ pnpm --filter @fidelidade/api db:generate      # migration após mexer no schema
 pnpm --filter @fidelidade/api db:studio
 ```
 
+Suítes: unitários em `tests/fidelidade-api/` (`vitest.config.ts`), integração em
+`tests/fidelidade-api-integration/` (`vitest.integration.config.ts`), com setup e
+helpers próprios — os do Kaneo não servem, derivam o nome do banco dele.
+
 Bancos: `fidelidade` e `fidelidade_test`. **As migrations rodam sozinhas quando
 a API sobe** — não há passo manual. Se o cluster estiver parado:
 `pg_ctlcluster 16 main start`.

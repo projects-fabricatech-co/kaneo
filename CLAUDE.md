@@ -51,7 +51,8 @@ Quando o repositório e o Notion divergirem, **o Notion vale**.
 
 - **pnpm** 10.32.1 (fixo em `packageManager`), Node >= 18. Não use npm nem yarn.
 - **Biome**: espaço em JS/TS/TSX, aspas duplas, ponto e vírgula. `pnpm lint`
-  escreve; `pnpm exec biome ci .` só verifica, e é o que o CI roda.
+  escreve; `pnpm exec biome ci .` só verifica, e é o que o CI roda. **Arquivos
+  CSS e `package.json` estão fora do Biome** — não estranhe se não formatarem.
 - **Conventional Commits**, verificados pelo commitlint.
 - **O pre-commit roda `biome ci .` e o build do monorepo inteiro.** Commits são
   lentos por isso — rode `pnpm lint` antes, porque `biome ci` não corrige.

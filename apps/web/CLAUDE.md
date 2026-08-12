@@ -28,7 +28,8 @@ pnpm --filter @kaneo/web lint
 | `src/components/` | Componentes |
 
 Estado global em Zustand, estilo em Tailwind v4, primitivos de UI em Radix.
-Feedback ao usuário por toast (sonner).
+Feedback ao usuário por toast (sonner). Sessão pelo cliente Better Auth em
+`@/lib/auth-client`.
 
 ## Ao adicionar uma feature
 

@@ -18,9 +18,10 @@ pnpm --filter @kaneo/api db:studio
 pnpm --filter @kaneo/api lint
 ```
 
-Testes: `pnpm test` na raiz roda os unitários; integração em
-`tests/api-integration/` com `pnpm test:integration`, que precisa de PostgreSQL.
-O env dos testes está em `tests/api-integration/setup.ts`.
+Testes: unitários em `tests/api/` (`apps/api/vitest.config.ts`), integração em
+`tests/api-integration/` (`apps/api/vitest.integration.config.ts`), com
+`pnpm test:integration` — precisa de PostgreSQL, e o env está em
+`tests/api-integration/setup.ts`.
 
 ## Estrutura
 
