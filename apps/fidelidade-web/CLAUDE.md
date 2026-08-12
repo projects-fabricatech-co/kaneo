@@ -7,7 +7,7 @@ Front do **Vale Desconto**. React 19 + Vite + TanStack Router/Query, porta
 
 ```bash
 pnpm --filter @fidelidade/web dev        # porta 5174
-pnpm --filter @fidelidade/web test       # 96 de componente e hook
+pnpm --filter @fidelidade/web test       # componentes e hooks
 pnpm --filter @fidelidade/web typecheck
 pnpm --filter @fidelidade/web build      # regenera routeTree.gen.ts
 ```

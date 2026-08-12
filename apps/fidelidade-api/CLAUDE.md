@@ -7,8 +7,8 @@ API do **Vale Desconto**. Hono + Drizzle + PostgreSQL + Better Auth, porta
 
 ```bash
 pnpm --filter @fidelidade/api dev              # tsx watch, porta 1338
-pnpm --filter @fidelidade/api test             # 116 unitários
-pnpm --filter @fidelidade/api test:integration # 236, precisa do Postgres de pé
+pnpm --filter @fidelidade/api test             # unitários
+pnpm --filter @fidelidade/api test:integration # precisa do Postgres de pé
 pnpm --filter @fidelidade/api typecheck
 pnpm --filter @fidelidade/api db:generate      # migration após mexer no schema
 pnpm --filter @fidelidade/api db:studio
