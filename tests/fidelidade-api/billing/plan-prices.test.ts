@@ -34,7 +34,9 @@ describe("monthlyRevenueCents", () => {
   it("always returns whole centavos", () => {
     for (const plan of PAID_PLAN_IDS) {
       for (const interval of BILLING_INTERVALS) {
-        expect(Number.isInteger(monthlyRevenueCents(plan, interval))).toBe(true);
+        expect(Number.isInteger(monthlyRevenueCents(plan, interval))).toBe(
+          true,
+        );
       }
     }
   });

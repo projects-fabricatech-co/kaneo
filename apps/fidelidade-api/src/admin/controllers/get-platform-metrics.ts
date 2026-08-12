@@ -163,7 +163,10 @@ async function getPlatformMetrics(): Promise<PlatformMetrics> {
     .select({ value: countAll })
     .from(stampTable)
     .where(
-      and(liveStamps, sql`date_trunc('day', ${stampLocalTime}) = ${localToday}`),
+      and(
+        liveStamps,
+        sql`date_trunc('day', ${stampLocalTime}) = ${localToday}`,
+      ),
     );
 
   const stampsWeek = db
@@ -227,7 +230,8 @@ async function getPlatformMetrics(): Promise<PlatformMetrics> {
   // 0%, not NaN. A blank tile reads as a broken screen, and on day one the
   // screen is not broken — it is empty.
   const denominator = counters?.accounts ?? 0;
-  const churnBase = (counters?.payingAccounts ?? 0) + (counters?.canceled30d ?? 0);
+  const churnBase =
+    (counters?.payingAccounts ?? 0) + (counters?.canceled30d ?? 0);
 
   return {
     timezone: PLATFORM_TIMEZONE,

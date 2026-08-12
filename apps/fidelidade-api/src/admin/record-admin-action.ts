@@ -77,7 +77,8 @@ export async function recordFromContext(
     ...entry,
     adminUserId: c.get("adminUserId") as string,
     adminEmail: c.get("adminEmail") as string,
-    reason: entry.reason ?? (c.get("adminReason") as string | undefined) ?? null,
+    reason:
+      entry.reason ?? (c.get("adminReason") as string | undefined) ?? null,
     ipAddress: callerIp(c),
   });
 }

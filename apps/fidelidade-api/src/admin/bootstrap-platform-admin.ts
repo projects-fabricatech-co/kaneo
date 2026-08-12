@@ -74,6 +74,8 @@ export async function ensurePlatformAdminBootstrap(): Promise<void> {
       tx,
     );
 
-    console.log(`fidelidade: ${email} promovido a administrador da plataforma.`);
+    console.log(
+      `fidelidade: ${email} promovido a administrador da plataforma.`,
+    );
   });
 }

@@ -52,6 +52,8 @@ describe("normalizeAdminReason", () => {
   });
 
   it("trims before measuring, so padding cannot buy the minimum", () => {
-    expect(normalizeAdminReason(`  ${"a".repeat(MIN_REASON_LENGTH - 1)}  `)).toBeNull();
+    expect(
+      normalizeAdminReason(`  ${"a".repeat(MIN_REASON_LENGTH - 1)}  `),
+    ).toBeNull();
   });
 });

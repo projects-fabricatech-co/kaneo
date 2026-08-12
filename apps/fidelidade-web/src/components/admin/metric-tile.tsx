@@ -24,7 +24,12 @@ type MetricTileProps = {
  * modals and overlays, and a grid of floating cards is the first thing that
  * makes a dashboard look like a template.
  */
-export function MetricTile({ label, value, hint, icon: Icon }: MetricTileProps) {
+export function MetricTile({
+  label,
+  value,
+  hint,
+  icon: Icon,
+}: MetricTileProps) {
   return (
     <Card className="shadow-none">
       <CardContent className="flex flex-col gap-1 p-4">
