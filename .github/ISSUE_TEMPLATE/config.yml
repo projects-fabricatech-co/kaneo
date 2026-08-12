@@ -5,7 +5,7 @@ contact_links:
     about: Setup local, variáveis de ambiente e comandos do dia a dia
   - name: O que já está planejado
     url: https://github.com/projects-fabricatech-co/kaneo/blob/main/ROADMAP.md
-    about: Segurança em aberto, pendências jurídicas e as fases da gestão da plataforma
+    about: O backlog vive no Notion, em Spec/Plano/Tarefas; este link leva até lá
   - name: Documentação do Kaneo
     url: https://kaneo.app/docs/core
     about: Para o Kaneo, o projeto open source em cima do qual este repositório foi montado
