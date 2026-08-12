@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+  <!-- Primary meta -->
+  <title>Vale Desconto — fidelidade digital para negócios locais</title>
+  <meta name="title" content="Vale Desconto — fidelidade digital para negócios locais">
+  <meta name="description"
+    content="Troque o cartãozinho de papel por fidelidade digital. Você carimba pelo celular no balcão e seu cliente acompanha por um link — sem conta, sem senha e sem aplicativo.">
+  <meta name="keywords"
+    content="cartão fidelidade digital, programa de fidelidade, fidelização de clientes, cartão de carimbos, fidelidade para cafeteria, fidelidade para barbearia, negócio local">
+  <meta name="application-name" content="Vale Desconto">
+  <meta name="author" content="Vale Desconto">
+  <link rel="canonical" href="https://valedesconto.com.br">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="pt_BR">
+  <meta property="og:site_name" content="Vale Desconto">
+  <meta property="og:url" content="https://valedesconto.com.br">
+  <meta property="og:title" content="Vale Desconto — fidelidade digital para negócios locais">
+  <meta property="og:description"
+    content="Cada compra deixa seu cliente mais perto de uma recompensa. Você carimba pelo celular, ele acompanha por um link — sem conta e sem senha.">
+  <meta property="og:image" content="https://valedesconto.com.br/og.png">
+  <meta property="og:image:alt" content="Vale Desconto — sua fidelidade vale">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://valedesconto.com.br">
+  <meta name="twitter:title" content="Vale Desconto — fidelidade digital para negócios locais">
+  <meta name="twitter:description"
+    content="Cada compra deixa seu cliente mais perto de uma recompensa. Você carimba pelo celular, ele acompanha por um link — sem conta e sem senha.">
+  <meta name="twitter:image" content="https://valedesconto.com.br/og.png">
+
+  <!-- Icons / PWA-ish chrome -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="shortcut icon" href="/favicon.svg" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-title" content="Vale Desconto" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#D93825" />
+  <meta name="color-scheme" content="light" />
+  <meta name="format-detection" content="telephone=no" />
+
+  <!--
+    The customer's card lives at /c/<token> and the token IS the credential, so
+    the path must never travel to a third party. Modern browsers already default
+    to strict-origin-when-cross-origin, which strips the path — but the logo on a
+    card is fetched from a host the LOJISTA chose, and "the visitor's browser
+    happens to default correctly" is not a control. Declaring no-referrer makes it
+    deterministic. Nothing in this app reads Referer.
+  -->
+  <meta name="referrer" content="no-referrer" />
+
+  <!--
+    Structured data. Kept in the served HTML rather than injected by the app so a
+    crawler that does not execute JavaScript still reads it.
+
+    The FAQPage mirrors the questions rendered on the landing page — Google
+    requires the markup to match visible content, and this file and
+    `copy.landing.faq` have to be edited together.
+  -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://valedesconto.com.br/#organization",
+          "name": "Vale Desconto",
+          "url": "https://valedesconto.com.br",
+          "description": "Plataforma de fidelidade digital para negócios locais com compra recorrente.",
+          "slogan": "Sua fidelidade vale.",
+          "areaServed": { "@type": "Country", "name": "Brasil" }
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://valedesconto.com.br/#website",
+          "url": "https://valedesconto.com.br",
+          "name": "Vale Desconto",
+          "inLanguage": "pt-BR",
+          "publisher": { "@id": "https://valedesconto.com.br/#organization" }
+        },
+        {
+          "@type": "SoftwareApplication",
+          "name": "Vale Desconto",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web",
+          "inLanguage": "pt-BR",
+          "publisher": { "@id": "https://valedesconto.com.br/#organization" },
+          "description": "Cartão de fidelidade digital: o lojista carimba pelo celular e o cliente acompanha o progresso por link ou QR Code, sem criar conta.",
+          "offers": [
+            {
+              "@type": "Offer",
+              "name": "Grátis",
+              "price": "0",
+              "priceCurrency": "BRL",
+              "description": "1 loja, 1 programa de fidelidade e até 50 clientes."
+            },
+            {
+              "@type": "Offer",
+              "name": "Essencial",
+              "price": "19.99",
+              "priceCurrency": "BRL",
+              "description": "Clientes ilimitados, cupons e campanhas, marca própria no cartão."
+            },
+            {
+              "@type": "Offer",
+              "name": "Pro",
+              "price": "49.90",
+              "priceCurrency": "BRL",
+              "description": "Várias lojas, equipe ilimitada e relatórios avançados."
+            }
+          ]
+        },
+        {
+          "@type": "FAQPage",
+          "@id": "https://valedesconto.com.br/#faq",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Meu cliente precisa instalar alguma coisa?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Não. Ele abre um link no navegador do celular e vê o cartão. Se quiser, salva na tela de início — mas nada é obrigatório."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "E se o cliente perder o link?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "É só você buscar pelo celular dele no balcão. O cartão está sempre lá, ligado ao número de telefone."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Dá para alguém carimbar duas vezes na mesma compra?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "O sistema bloqueia carimbos repetidos dentro de uma janela que você configura, e um toque duplo no botão nunca vira dois carimbos."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Meu time no caixa pode carimbar?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Pode. Cada pessoa entra com o próprio acesso e só faz o que é do balcão: carimbar, validar código e buscar cliente. Mexer no programa e nos planos é só seu."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Preciso de maquininha ou leitor especial?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Não. Basta o celular que você já usa."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Posso cancelar quando quiser?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Pode. Se cancelar, sua conta volta para o plano Grátis e seus dados continuam lá — só a criação de coisas novas fica limitada."
+              }
+            }
+          ]
+        }
+      ]
+    }
+  </script>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
+</html>

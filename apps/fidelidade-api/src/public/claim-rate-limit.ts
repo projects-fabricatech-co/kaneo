@@ -1,0 +1,167 @@
+import { createHash, randomBytes } from "node:crypto";
+import type { Context } from "hono";
+import { HTTPException } from "hono/http-exception";
+
+/**
+ * ABUSE DAMPENING, NOT A SECURITY CONTROL. Read this before relying on it:
+ *
+ *  - The window lives in THIS PROCESS's memory. Two API instances behind a load
+ *    balancer allow twice as much, and a restart forgives everything. Making it
+ *    real means Redis, and the product does not have Redis.
+ *  - The client IP comes from `X-Forwarded-For`, which anybody can set. A
+ *    determined attacker rotates it and walks straight through.
+ *
+ * What it DOES buy: the one unauthenticated write in the product cannot be
+ * hammered from a single laptop or a stuck retry loop, and a campaign cap cannot
+ * be burned through in one second by accident. The real guarantees elsewhere are
+ * structural — the `(coupon_id, customer_id)` unique index bounds one person to
+ * one code no matter how many times they post, and the guarded UPDATE bounds the
+ * campaign to its cap.
+ *
+ * ─── WHY THE PHONE IS THE PRIMARY KEY, NOT THE IP ──────────────────────────
+ *
+ * Keying on `(ip, campaign)` alone made this a denial of service against the
+ * people it was supposed to protect. An audit demonstrated it: seventeen
+ * requests with no forwarding header locked a campaign for TEN MINUTES for every
+ * other caller without one, because they all shared a single `"unknown"` bucket.
+ * Everyone behind one CGNAT or one shopping-centre wifi shared one budget too —
+ * and the attacker, who controls the header, simply set one and walked past.
+ *
+ * So the bucket everyone shares is gone. What is actually worth bounding is how
+ * many times ONE PHONE is offered to ONE CAMPAIGN — that is the thing a real
+ * person does once and a script does thousands of times, and the attacker cannot
+ * forge it without changing who they are claiming to be. The IP keeps a much
+ * looser budget on top, purely to blunt a script that rotates phone numbers, and
+ * a caller whose IP we cannot establish is simply not counted on that axis: an
+ * absent header must never be a shared punishment.
+ */
+
+const WINDOW_MS = 10 * 60 * 1000;
+
+/** One person claiming one campaign. Generous for fat fingers, useless for a script. */
+const MAX_PER_PHONE = 5;
+
+/**
+ * The looser ceiling on a single ESTABLISHED origin, to blunt phone rotation.
+ * Deliberately high: a family, a table of friends and an office all legitimately
+ * claim the same campaign from one address within ten minutes.
+ */
+const MAX_PER_IP = 60;
+
+/** Sweep threshold. Bounded memory matters more than exactness here. */
+const MAX_TRACKED_KEYS = 20_000;
+
+/**
+ * Per-process and random, so the map keys are not a rainbow table of the phone
+ * numbers and IPs that visited. Nothing here is ever written to a row —
+ * `coupon_redemptions` has no IP column and must not grow one.
+ */
+const KEY_SALT = randomBytes(16);
+
+const attempts = new Map<string, number[]>();
+
+function bucketKey(kind: string, value: string, token: string): string {
+  return createHash("sha256")
+    .update(KEY_SALT)
+    .update(`${kind} ${value} ${token}`)
+    .digest("base64url");
+}
+
+function sweep(now: number): void {
+  for (const [key, timestamps] of attempts) {
+    const last = timestamps[timestamps.length - 1];
+
+    if (last === undefined || now - last >= WINDOW_MS) {
+      attempts.delete(key);
+    }
+  }
+}
+
+/** Records an attempt on one axis and reports whether it just went over. */
+function overBudget(key: string, limit: number, now: number): boolean {
+  const recent = (attempts.get(key) ?? []).filter((at) => now - at < WINDOW_MS);
+
+  if (recent.length >= limit) {
+    attempts.set(key, recent);
+    return true;
+  }
+
+  recent.push(now);
+  attempts.set(key, recent);
+  return false;
+}
+
+/**
+ * The claimed client IP, or null when there is nothing trustworthy to read.
+ *
+ * Null is NOT a bucket. Lumping every header-less caller together is what turned
+ * this limiter into a weapon against ordinary customers; a caller we cannot
+ * identify is bounded by the phone axis and by the database guarantees, which is
+ * what actually holds anyway.
+ */
+export function claimClientIp(c: Context): string | null {
+  const forwarded = c.req.header("x-forwarded-for");
+
+  if (forwarded) {
+    const first = forwarded.split(",")[0]?.trim();
+
+    if (first) {
+      return first;
+    }
+  }
+
+  return c.req.header("x-real-ip")?.trim() || null;
+}
+
+export function claimRateLimitError(): HTTPException {
+  return new HTTPException(429, {
+    res: Response.json(
+      {
+        error: "rate_limited",
+        message: "Muitas tentativas. Tente de novo em alguns minutos.",
+      },
+      { status: 429 },
+    ),
+  });
+}
+
+/**
+ * Records one attempt and throws 429 once either axis is full. Called BEFORE any
+ * database work, so a flood costs two hashes and nothing else.
+ *
+ * `phone` is the RAW input, not the normalized number: normalization can throw,
+ * and a limiter that only counts well-formed input is a limiter an attacker skips
+ * by sending garbage. Spellings of the same number therefore land in different
+ * buckets — acceptable, because the honest user retries the same way they typed
+ * it, and the attacker rotating spellings still meets the IP axis.
+ */
+export function consumeClaimAttempt(
+  ip: string | null,
+  token: string,
+  phone: string,
+): void {
+  const now = Date.now();
+
+  if (attempts.size > MAX_TRACKED_KEYS) {
+    sweep(now);
+  }
+
+  const trimmedPhone = phone.trim();
+
+  if (trimmedPhone) {
+    if (
+      overBudget(bucketKey("phone", trimmedPhone, token), MAX_PER_PHONE, now)
+    ) {
+      throw claimRateLimitError();
+    }
+  }
+
+  if (ip && overBudget(bucketKey("ip", ip, token), MAX_PER_IP, now)) {
+    throw claimRateLimitError();
+  }
+}
+
+/** Test seam: the window is module state and outlives a single `createApp()`. */
+export function resetClaimRateLimit(): void {
+  attempts.clear();
+}

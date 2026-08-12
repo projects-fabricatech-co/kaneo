@@ -100,6 +100,10 @@ jobs:
       KANEO_API_URL: http://localhost:1337
       KANEO_CLIENT_URL: http://localhost:5173
       DISABLE_GUEST_ACCESS: "false"
+      FIDELIDADE_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fidelidade_test
+      FIDELIDADE_API_URL: http://localhost:1338
+      FIDELIDADE_CLIENT_URL: http://localhost:5174
+      FIDELIDADE_AUTH_SECRET: test-secret-with-at-least-32-chars
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6

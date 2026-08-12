@@ -1,0 +1,45 @@
+{
+	"compilerOptions": {
+		"tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+		/*
+		 * ES2022, not the Vite template's ES2020 default. Two reasons: this app
+		 * builds with `target: "esnext"`, so ES2020 understated what actually
+		 * ships; and importing `AppType` from @fidelidade/api pulls the API's
+		 * source into this program, so the two `lib` settings have to agree or
+		 * any modern method the API uses fails to typecheck here.
+		 */
+		"target": "ES2022",
+		"useDefineForClassFields": true,
+		"lib": ["ES2022", "DOM", "DOM.Iterable"],
+		"module": "ESNext",
+		"skipLibCheck": true,
+
+		/* Bundler mode */
+		"moduleResolution": "bundler",
+		"resolveJsonModule": true,
+		"allowImportingTsExtensions": true,
+		"isolatedModules": true,
+		"moduleDetection": "force",
+		"noEmit": true,
+		"jsx": "react-jsx",
+
+		/* Linting */
+		"strict": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"noFallthroughCasesInSwitch": true,
+		"noUncheckedSideEffectImports": true,
+		"paths": {
+			"@/*": ["./src/*"]
+		}
+	},
+	"include": ["src"],
+	"exclude": [
+		"../api/**/*",
+		"../web/**/*",
+		"../site/**/*",
+		"../docs/**/*",
+		"../../packages/**/*"
+	],
+	"baseUrl": "."
+}
