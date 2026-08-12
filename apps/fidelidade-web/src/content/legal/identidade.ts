@@ -12,20 +12,25 @@
 
 export const IDENTIDADE = {
   nomeFantasia: "Vale Desconto",
-  /** TODO: razão social completa. */
-  razaoSocial: "TODO — razão social",
-  /** TODO: CNPJ. */
-  cnpj: "TODO — CNPJ",
-  /** TODO: endereço completo com CEP. */
-  endereco: "TODO — endereço",
-  /** Canal do titular (LGPD Art. 18) e do encarregado (Art. 41). */
+  razaoSocial: "D M Tecnologia e Inovação Ltda",
+  cnpj: "42.213.670/0001-36",
+  /** Endereço publicado em fabricatech.co, a marca da mesma empresa. */
+  endereco:
+    "Tv. São José, 455 — Navegantes, Porto Alegre/RS, CEP 90240-200, Brasil",
+  /**
+   * Canal do titular (LGPD Art. 18) e do encarregado (Art. 41).
+   *
+   * ATENÇÃO: estas caixas precisam EXISTIR e ser lidas. Uma política que
+   * publica um endereço que ninguém atende é pior que não ter canal — ela
+   * documenta uma obrigação de 15 dias que você não vai cumprir.
+   */
   emailPrivacidade: "privacidade@valedesconto.com.br",
   emailSuporte: "suporte@valedesconto.com.br",
-  /** TODO: nome do encarregado pelo tratamento de dados. */
+  /** TODO: nome do encarregado pelo tratamento de dados (LGPD Art. 41). */
   encarregado: "TODO — nome do encarregado",
   site: "https://valedesconto.com.br",
-  /** TODO: comarca do foro eleito. */
-  foro: "TODO — comarca",
+  /** Derivado da sede: comarca do endereço acima. */
+  foro: "Porto Alegre, Rio Grande do Sul",
 } as const;
 
 /** True while any real-world fact is still missing. Drives the visible warning. */
