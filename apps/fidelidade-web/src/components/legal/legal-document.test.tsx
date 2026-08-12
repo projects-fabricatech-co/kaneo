@@ -1,5 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { IDENTIDADE, IDENTIDADE_INCOMPLETA } from "@/content/legal/identidade";
 import { POLITICA_PRIVACIDADE } from "@/content/legal/privacidade";
 import { TERMOS_DE_USO } from "@/content/legal/termos";
 import type { LegalDocument } from "@/content/legal/types";
@@ -21,6 +22,30 @@ vi.mock("@tanstack/react-router", () => ({
     </a>
   ),
 }));
+
+/**
+ * The identity is complete today, so the warning does not render — which would
+ * make a test that only asserts "the warning is there" pass forever after
+ * someone deletes the warning. The flag is faked instead, so both directions
+ * stay covered no matter what the real values happen to be.
+ */
+const identidade = vi.hoisted(() => ({ incompleta: false }));
+
+vi.mock("@/content/legal/identidade", async (importOriginal) => {
+  const real =
+    await importOriginal<typeof import("@/content/legal/identidade")>();
+
+  return {
+    ...real,
+    get IDENTIDADE_INCOMPLETA() {
+      return identidade.incompleta;
+    },
+  };
+});
+
+beforeEach(() => {
+  identidade.incompleta = false;
+});
 
 afterEach(() => {
   cleanup();
@@ -76,11 +101,37 @@ describe("LegalDocumentView", () => {
   it("warns, visibly, while the company identity is still unfilled", () => {
     // A policy that names no controller identifies nobody. This must not be
     // possible to ship by accident, so the warning is part of the page.
+    identidade.incompleta = true;
+
     render(<LegalDocumentView document={DOC} />);
 
     expect(screen.getByRole("alert")).toHaveTextContent(
       /dados de identificação da empresa/i,
     );
+  });
+
+  it("does not nag once the identity is filled in", () => {
+    render(<LegalDocumentView document={DOC} />);
+
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+});
+
+describe("the company identity", () => {
+  it("is complete, so the published texts identify a controller", () => {
+    // Fails the moment a field is added and left as TODO — which is the point:
+    // a half-filled identity is the state that must not reach production
+    // quietly. Uses the real module, not the fake above.
+    expect(IDENTIDADE_INCOMPLETA).toBe(false);
+  });
+
+  it("names the controller and the data protection officer", () => {
+    // LGPD Art. 41 asks for the officer's identity to be public; Art. 18 needs
+    // a channel that a titular can actually write to.
+    expect(IDENTIDADE.razaoSocial).not.toMatch(/TODO/);
+    expect(IDENTIDADE.cnpj).not.toMatch(/TODO/);
+    expect(IDENTIDADE.encarregado).not.toMatch(/TODO/);
+    expect(IDENTIDADE.emailPrivacidade).toMatch(/@/);
   });
 });
 

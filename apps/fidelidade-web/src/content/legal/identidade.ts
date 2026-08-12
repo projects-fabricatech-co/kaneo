@@ -27,8 +27,8 @@ export const IDENTIDADE = {
    */
   emailPrivacidade: "contato@fabricatech.co",
   emailSuporte: "contato@fabricatech.co",
-  /** TODO: nome do encarregado pelo tratamento de dados (LGPD Art. 41). */
-  encarregado: "TODO — nome do encarregado",
+  /** Encarregado pelo tratamento de dados (LGPD Art. 41). */
+  encarregado: "David Melo",
   site: "https://valedesconto.com.br",
   /** Derivado da sede: comarca do endereço acima. */
   foro: "Porto Alegre, Rio Grande do Sul",
