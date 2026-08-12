@@ -47,6 +47,27 @@ Quando o repositório e o Notion divergirem, **o Notion vale**.
 5. **Não faça além do pedido.** Feature existe para resolver problema real, não
    para impressionar.
 
+## O que não pode ser descoberto tarde
+
+Fica aqui, e não só no arquivo do app, porque **ignorar qualquer uma destas
+produz um defeito** — não uma dúvida. O detalhe de cada uma está no
+`CLAUDE.md` do app.
+
+- **A ordem de registro das rotas é a fronteira de segurança.** Em
+  `apps/fidelidade-api/src/index.ts`, tudo antes de `api.use("*", authGate)` é
+  público. Mover um bloco de lugar muda quem pode chamá-lo, e nada avisa.
+- **`customers.public_token` é credencial, não identificador.** Quem tem o link
+  vê o cartão e os códigos de prêmio vivos. Nunca o exponha fora da rota pública.
+- **Resposta de rota pública é projeção escrita à mão**, campo a campo. Nunca
+  despeje a linha do banco: a próxima coluna sensível vazaria por omissão.
+- **Concorrência é resolvida no banco, não em JavaScript** — advisory lock no
+  cooldown, `UPDATE` guardado no teto do cupom, `UPDATE` atômico no resgate,
+  idempotência por índice único. Não troque nenhuma por checagem em JS.
+- **Limite de plano é contado dentro da transação que insere.** Contar antes e
+  inserir depois são dois comandos com um intervalo no meio.
+- **404, nunca 403, para recurso de outro dono** — 403 confirma existência e
+  vira oráculo de enumeração entre lojistas.
+
 ## Ferramental
 
 - **pnpm** 10.32.1 (fixo em `packageManager`), Node >= 18. Não use npm nem yarn.
