@@ -991,6 +991,23 @@ wb.active = 1
 # =====================================================================
 # VALIDADOR ESTÁTICO — falha o build. Regra que não é verificada não existe.
 # =====================================================================
+
+def desbalanceada(f):
+    """Parenteses fora de literal de texto. O motor de formulas so acusa isso no calculo;
+    o build tem de pegar antes."""
+    d, dentro = 0, False
+    for ch in f:
+        if ch == '"':
+            dentro = not dentro
+        elif not dentro:
+            if ch == "(":
+                d += 1
+            elif ch == ")":
+                d -= 1
+            if d < 0:
+                return True
+    return d != 0
+
 PROIBIDAS = ["XLOOKUP", "FILTER(", "UNIQUE(", "SORT(", "SEQUENCE(", "SUMPRODUCT("]
 SEM_PREFIXO = ["MAXIFS(", "MINIFS(", "TEXTJOIN(", "CONCAT(", "IFS(", "SWITCH("]
 erros = []
@@ -1005,6 +1022,8 @@ for ws in wb.worksheets:
                 continue
             n_formulas += 1
             loc = "{}!{}".format(ws.title, c.coordinate)
+            if desbalanceada(f):
+                erros.append("{}: parênteses desbalanceados".format(loc))
             # 1. referência de coluna inteira
             for m in re.finditer(r'(?:^|[^0-9A-Z$])\$?([A-Z]{1,3}):\$?([A-Z]{1,3})(?![0-9])', f):
                 erros.append("{}: referência de coluna inteira '{}:{}'".format(loc, m.group(1), m.group(2)))
