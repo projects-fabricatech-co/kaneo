@@ -22,6 +22,7 @@ SH_OC, SH_AV, SH_PA = "'Ocorrências'", "'Avaliação'", "'Painel'"
 SH_PDI, SH_1A1, SH_AL = "'PDI'", "'1a1'", "'Alertas'"
 
 LAST_PES, LAST_ALO, LAST_OC, LAST_AV, LAST_PDI, LAST_PA = 64, 84, 604, 404, 104, 64
+LAST_1A1 = 111
 
 def fnt(sz=10, b=False, color="000000", it=False):
     return Font(name=F, size=sz, bold=b, color=color, italic=it)
@@ -317,9 +318,9 @@ for i, p in enumerate(PESSOAS):
     for j, v in enumerate(p): pe.cell(row=5 + i, column=1 + j, value=v)
 for rr in range(5, LAST_PES + 1):
     pe.cell(row=rr, column=9, value='=IF($B{0}="","","Ativo")'.format(rr))
-    pe.cell(row=rr, column=10, value=('=IF($B{0}="","",IF(COUNTIFS({1}!$C$5:$C${2},$A{0},{1}!$F$5:$F${2},"Sim")=0,"",'
-                                      '_xlfn.MAXIFS({1}!$A$5:$A${2},{1}!$C$5:$C${2},$A{0},{1}!$F$5:$F${2},"Sim")))'
-                                      ).format(rr, SH_1A1, 44))
+    pe.cell(row=rr, column=10, value=('=IF($B{0}="","",IF(COUNTIFS({1}!$B$52:$B${2},$A{0},{1}!$G$52:$G${2},"Sim")=0,"",'
+                                      '_xlfn.MAXIFS({1}!$A$52:$A${2},{1}!$B$52:$B${2},$A{0},{1}!$G$52:$G${2},"Sim")))'
+                                      ).format(rr, SH_1A1, LAST_1A1))
     pe.cell(row=rr, column=11, value='=IF($B{0}="","",COUNTIFS({1}!$B$5:$B${2},$A{0},{1}!$N$5:$N${2},"Sim"))'.format(rr, SH_ALO, LAST_ALO))
     pe.cell(row=rr, column=12, value=('=IF($B{0}="","",IF($K{0}=0,"sem alocação",IF($K{0}=1,'
                                       'INDEX({1}!$F$5:$F${2},MATCH($A{0},{1}!$O$5:$O${2},0)),"Multi")))'
@@ -756,21 +757,27 @@ for i, p in enumerate(["Como está a sua carga? O que está pesando mais do que 
     for j in range(2, 8): um.cell(row=rr, column=j).border = BOX
     um.row_dimensions[rr].height = 30
 
-faixa(um, 43, "5.  COMPROMISSOS — registre a data aqui; é o que alimenta o alerta de 1:1 atrasada", 7)
-cab(um, 44, ["Data da 1:1", "Pessoa (ID)", "Gestor", "Compromisso", "Dono", "Prazo", "Feita?"])
-for rr in range(45, 51):
+faixa(um, 43, "5.  ANOTAÇÕES DA CONVERSA — escreva à mão, aqui", 7)
+for rr in range(44, 49):
+    for j in range(1, 8):
+        um.cell(row=rr, column=j).border = BOX
+    um.row_dimensions[rr].height = 24
+um.print_area = "A1:G48"
+
+faixa(um, 50, "6.  REGISTRO DE 1:1 — digite depois da conversa. É esta data que alimenta o alerta de 1:1 atrasada no Painel.", 7)
+cab(um, 51, ["Data da 1:1", "Pessoa (ID)", "Gestor", "Compromisso assumido", "Dono", "Prazo", "1:1 realizada?"])
+for rr in range(52, LAST_1A1 + 1):
     um["A" + str(rr)].number_format = "DD/MM/YYYY"
     um["F" + str(rr)].number_format = "DD/MM/YYYY"
-pinta(um, "A45:G50", "in")
-um.cell(row=45, column=1, value=dt.date(2026, 8, 20))
-um.cell(row=45, column=2, value="P001")
-um.cell(row=45, column=3, value="Rafael Souza")
-um.cell(row=45, column=4, value="Incluir teste de caminho de erro nos próximos 3 PRs de rota nova.")
-um.cell(row=45, column=5, value="Ana Ribeiro")
-um.cell(row=45, column=6, value=dt.date(2026, 11, 30))
-um.cell(row=45, column=7, value="Sim")
-dv(um, "simnao", "G45:G50")
-um.print_area = "A1:G50"
+pinta(um, "A52:G{}".format(LAST_1A1), "in")
+for j, v in enumerate([dt.date(2026, 8, 20), "P001", "Rafael Souza",
+                       "Incluir teste de caminho de erro nos próximos 3 PRs de rota nova.",
+                       "Ana Ribeiro", dt.date(2026, 11, 30), "Sim"]):
+    um.cell(row=52, column=1 + j, value=v)
+dv(um, "simnao", "G52:G{}".format(LAST_1A1))
+um["B51"].comment = Comment(
+ "Use o ID da pessoa (P001), não o nome. O ID é a chave estável do modelo:\n"
+ "nome muda, ID não. É ele que liga esta linha ao Painel.", "Técnico")
 um.page_setup.orientation = "portrait"
 um.page_setup.fitToWidth = 1
 um.sheet_properties.pageSetUpPr.fitToPage = True
