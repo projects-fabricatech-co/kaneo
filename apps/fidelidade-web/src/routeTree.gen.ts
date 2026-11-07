@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/_app'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as PrivacidadeRouteImport } from './routes/privacidade'
 import { Route as TermosRouteImport } from './routes/termos'
@@ -21,6 +22,9 @@ import { Route as AppPainelRouteImport } from './routes/_app/painel'
 import { Route as AppPlanosRouteImport } from './routes/_app/planos'
 import { Route as AppProgramaRouteImport } from './routes/_app/programa'
 import { Route as AppValidarRouteImport } from './routes/_app/validar'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminAuditoriaRouteImport } from './routes/admin/auditoria'
+import { Route as AdminSaudeRouteImport } from './routes/admin/saude'
 import { Route as AuthCadastrarRouteImport } from './routes/auth/cadastrar'
 import { Route as AuthEntrarRouteImport } from './routes/auth/entrar'
 import { Route as CTokenRouteImport } from './routes/c.$token'
@@ -33,6 +37,11 @@ const IndexRoute = IndexRouteImport.update({
 } as any)
 const AppRoute = AppRouteImport.update({
   id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OnboardingRoute = OnboardingRouteImport.update({
@@ -85,6 +94,21 @@ const AppValidarRoute = AppValidarRouteImport.update({
   path: '/validar',
   getParentRoute: () => AppRoute,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAuditoriaRoute = AdminAuditoriaRouteImport.update({
+  id: '/auditoria',
+  path: '/auditoria',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSaudeRoute = AdminSaudeRouteImport.update({
+  id: '/saude',
+  path: '/saude',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AuthCadastrarRoute = AuthCadastrarRouteImport.update({
   id: '/auth/cadastrar',
   path: '/auth/cadastrar',
@@ -108,6 +132,7 @@ const CupomTokenRoute = CupomTokenRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/onboarding': typeof OnboardingRoute
   '/privacidade': typeof PrivacidadeRoute
   '/termos': typeof TermosRoute
@@ -118,10 +143,13 @@ export interface FileRoutesByFullPath {
   '/planos': typeof AppPlanosRoute
   '/programa': typeof AppProgramaRoute
   '/validar': typeof AppValidarRoute
+  '/admin/auditoria': typeof AdminAuditoriaRoute
+  '/admin/saude': typeof AdminSaudeRoute
   '/auth/cadastrar': typeof AuthCadastrarRoute
   '/auth/entrar': typeof AuthEntrarRoute
   '/c/$token': typeof CTokenRoute
   '/cupom/$token': typeof CupomTokenRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -135,15 +163,19 @@ export interface FileRoutesByTo {
   '/planos': typeof AppPlanosRoute
   '/programa': typeof AppProgramaRoute
   '/validar': typeof AppValidarRoute
+  '/admin/auditoria': typeof AdminAuditoriaRoute
+  '/admin/saude': typeof AdminSaudeRoute
   '/auth/cadastrar': typeof AuthCadastrarRoute
   '/auth/entrar': typeof AuthEntrarRoute
   '/c/$token': typeof CTokenRoute
   '/cupom/$token': typeof CupomTokenRoute
+  '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
+  '/admin': typeof AdminRouteWithChildren
   '/onboarding': typeof OnboardingRoute
   '/privacidade': typeof PrivacidadeRoute
   '/termos': typeof TermosRoute
@@ -154,15 +186,19 @@ export interface FileRoutesById {
   '/_app/planos': typeof AppPlanosRoute
   '/_app/programa': typeof AppProgramaRoute
   '/_app/validar': typeof AppValidarRoute
+  '/admin/auditoria': typeof AdminAuditoriaRoute
+  '/admin/saude': typeof AdminSaudeRoute
   '/auth/cadastrar': typeof AuthCadastrarRoute
   '/auth/entrar': typeof AuthEntrarRoute
   '/c/$token': typeof CTokenRoute
   '/cupom/$token': typeof CupomTokenRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/onboarding'
     | '/privacidade'
     | '/termos'
@@ -173,10 +209,13 @@ export interface FileRouteTypes {
     | '/planos'
     | '/programa'
     | '/validar'
+    | '/admin/auditoria'
+    | '/admin/saude'
     | '/auth/cadastrar'
     | '/auth/entrar'
     | '/c/$token'
     | '/cupom/$token'
+    | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -190,14 +229,18 @@ export interface FileRouteTypes {
     | '/planos'
     | '/programa'
     | '/validar'
+    | '/admin/auditoria'
+    | '/admin/saude'
     | '/auth/cadastrar'
     | '/auth/entrar'
     | '/c/$token'
     | '/cupom/$token'
+    | '/admin'
   id:
     | '__root__'
     | '/'
     | '/_app'
+    | '/admin'
     | '/onboarding'
     | '/privacidade'
     | '/termos'
@@ -208,15 +251,19 @@ export interface FileRouteTypes {
     | '/_app/planos'
     | '/_app/programa'
     | '/_app/validar'
+    | '/admin/auditoria'
+    | '/admin/saude'
     | '/auth/cadastrar'
     | '/auth/entrar'
     | '/c/$token'
     | '/cupom/$token'
+    | '/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
+  AdminRoute: typeof AdminRouteWithChildren
   OnboardingRoute: typeof OnboardingRoute
   PrivacidadeRoute: typeof PrivacidadeRoute
   TermosRoute: typeof TermosRoute
@@ -240,6 +287,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/onboarding': {
@@ -312,6 +366,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppValidarRouteImport
       parentRoute: typeof AppRoute
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/auditoria': {
+      id: '/admin/auditoria'
+      path: '/auditoria'
+      fullPath: '/admin/auditoria'
+      preLoaderRoute: typeof AdminAuditoriaRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/saude': {
+      id: '/admin/saude'
+      path: '/saude'
+      fullPath: '/admin/saude'
+      preLoaderRoute: typeof AdminSaudeRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/auth/cadastrar': {
       id: '/auth/cadastrar'
       path: '/auth/cadastrar'
@@ -365,9 +440,24 @@ const AppRouteChildren: AppRouteChildren = {
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
+interface AdminRouteChildren {
+  AdminAuditoriaRoute: typeof AdminAuditoriaRoute
+  AdminSaudeRoute: typeof AdminSaudeRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminAuditoriaRoute: AdminAuditoriaRoute,
+  AdminSaudeRoute: AdminSaudeRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
+  AdminRoute: AdminRouteWithChildren,
   OnboardingRoute: OnboardingRoute,
   PrivacidadeRoute: PrivacidadeRoute,
   TermosRoute: TermosRoute,

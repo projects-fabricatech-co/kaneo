@@ -644,6 +644,138 @@ export const stripeEventTable = pgTable("stripe_event", {
 });
 
 /**
+ * Webhook deliveries that did NOT land, which `stripe_event` structurally cannot
+ * record.
+ *
+ * A delivery whose apply throws rolls the claim back with it, so the row that
+ * would have named the failure disappears along with the failure; a delivery
+ * that fails the signature check never reaches the database at all. Both are
+ * invisible in `stripe_event` by design — which leaves "webhooks are failing"
+ * unanswerable, and that is the exact question the admin health page exists to
+ * answer.
+ *
+ * Written on the pool connection, NEVER inside the webhook's transaction: a row
+ * inserted into a transaction that is rolling back is a row nobody will read.
+ */
+export const stripeWebhookFailureTable = pgTable(
+  "stripe_webhook_failures",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    /** Null for a signature failure: the payload was never parsed. */
+    eventId: text("event_id"),
+    eventType: text("event_type"),
+    /** `signature` | `apply_error`. */
+    reason: text("reason").notNull(),
+    message: text("message"),
+    createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("stripe_webhook_failures_createdAt_idx").on(table.createdAt),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// Platform administration
+// ---------------------------------------------------------------------------
+
+/**
+ * Who may open the owner's console.
+ *
+ * This is the most dangerous grant in the product — it reaches across every
+ * tenant — so it is a row that can be revoked, not a boolean on `user` and not
+ * a list in the environment. Revoking sets `revokedAt` and keeps the row, so the
+ * grant's history survives; re-granting clears the column on that same row,
+ * which is why the uniqueness is on `userId` alone.
+ */
+export const platformAdminTable = pgTable(
+  "platform_admins",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => userTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    /** Null when the grant came from the bootstrap, which has no granter. */
+    grantedByUserId: text("granted_by_user_id").references(() => userTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    revokedAt: timestamp("revoked_at", { mode: "date", withTimezone: true }),
+    createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    unique("platform_admins_userId_unique").on(table.userId),
+    index("platform_admins_grantedByUserId_idx").on(table.grantedByUserId),
+  ],
+);
+
+/**
+ * Every action an administrator took, append-only.
+ *
+ * Two deliberate deviations from this schema's own conventions, both load-bearing:
+ *
+ * `adminUserId` carries NO foreign key, and the e-mail is snapshotted beside it.
+ * The house rule is that every FK declares `onDelete`, but there is no value of
+ * `onDelete` that is correct here: `cascade` lets an erasure request (phase C)
+ * empty the log that proves what was done, `restrict` makes the log block the
+ * erasure the law requires, and `set null` throws away the only attribution.
+ * A log that any of those three can quietly hollow out is not a log.
+ *
+ * There is no `updatedAt`, and its absence is the statement: nothing edits a row
+ * here. The migration adds a trigger that raises on UPDATE and DELETE, because
+ * "append-only" enforced by convention is enforced until the first person in a
+ * hurry with a psql prompt.
+ *
+ * The trigger deliberately does NOT cover TRUNCATE, which is a different
+ * statement and skips row-level guards anyway: the integration suite resets by
+ * truncating every table in `public`, so guarding it would trade a real
+ * protection for a broken test run. Truncating this table in production is a
+ * deliberate act with a superuser prompt, not the accident the trigger is for.
+ */
+export const adminAuditLogTable = pgTable(
+  "admin_audit_log",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    adminUserId: text("admin_user_id").notNull(),
+    adminEmail: text("admin_email").notNull(),
+    /** Dotted verb, e.g. `admin.metrics.read`, `admin.bootstrap`. */
+    action: text("action").notNull(),
+    /** `store` | `customer` | `user` | `subscription`, when there is a target. */
+    targetType: text("target_type"),
+    targetId: text("target_id"),
+    /** The tenant the action reached into, when it reached into one. */
+    storeId: text("store_id"),
+    /** Required by `requireAdminReason` on anything touching a person's data. */
+    reason: text("reason"),
+    ipAddress: text("ip_address"),
+    createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("admin_audit_log_createdAt_idx").on(table.createdAt),
+    index("admin_audit_log_adminUserId_idx").on(table.adminUserId),
+    index("admin_audit_log_storeId_idx").on(table.storeId),
+  ],
+);
+
+/**
  * Proof that a person agreed, and to WHAT.
  *
  * LGPD art. 8º, §1º puts the burden on the controller to demonstrate consent —

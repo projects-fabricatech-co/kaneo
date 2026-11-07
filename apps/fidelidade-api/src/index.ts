@@ -9,6 +9,8 @@ import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
+import admin from "./admin";
+import { ensurePlatformAdminBootstrap } from "./admin/bootstrap-platform-admin";
 import { auth } from "./auth";
 import billing from "./billing";
 import handleStripeWebhook from "./billing/controllers/handle-webhook";
@@ -37,6 +39,9 @@ type ApiVariables = {
     userEmail: string;
     storeId: string;
     storeRole: string;
+    adminUserId: string;
+    adminEmail: string;
+    adminReason: string;
   };
 };
 
@@ -152,6 +157,11 @@ export function createApp() {
   const dashboardApi = api.route("/dashboard", dashboard);
   const billingApi = api.route("/billing", billing);
 
+  // The owner's console. Authenticated like everything above it, and then gated
+  // again on `platform_admins` inside the router — a lojista session reaching
+  // this path gets 404, not 403.
+  const adminApi = api.route("/admin", admin);
+
   app.route("/api", api);
 
   return {
@@ -168,6 +178,7 @@ export function createApp() {
     couponApi,
     dashboardApi,
     billingApi,
+    adminApi,
   };
 }
 
@@ -184,6 +195,7 @@ const {
   couponApi,
   dashboardApi,
   billingApi,
+  adminApi,
 } = createApp();
 
 /**
@@ -204,7 +216,8 @@ export type AppType =
   | typeof codeApi
   | typeof couponApi
   | typeof dashboardApi
-  | typeof billingApi;
+  | typeof billingApi
+  | typeof adminApi;
 
 export default app;
 
@@ -221,6 +234,15 @@ async function startServer() {
   } catch (error) {
     console.error("❌ Falha ao migrar o banco de dados:", error);
     process.exit(1);
+  }
+
+  // After the migrations, because it writes to tables they create. Non-fatal on
+  // purpose: failing to promote an administrator must not keep the product from
+  // serving lojistas.
+  try {
+    await ensurePlatformAdminBootstrap();
+  } catch (error) {
+    console.error("fidelidade: falha ao promover o administrador", error);
   }
 
   const port = Number(process.env.FIDELIDADE_PORT ?? 1338);

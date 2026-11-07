@@ -26,6 +26,44 @@ const PRICE_ENV_VARS: Record<PaidPlanId, Record<BillingInterval, string>> = {
   },
 };
 
+/**
+ * What each plan costs, in centavos. Kept beside `PRICE_ENV_VARS` because this
+ * file is already the only one that names a Stripe price, and a second place
+ * that knows what Essencial costs is a second place to forget on the day of a
+ * price change.
+ *
+ * NOT used to charge anybody — checkout sends a plan and an interval and Stripe
+ * applies its own price. This table exists so the admin console can turn a table
+ * of subscriptions into an MRR without a round trip to Stripe on every page load.
+ *
+ * `apps/fidelidade-web/src/components/plans/catalogue.ts` holds the same numbers
+ * for display; it says so, and it is a copy on purpose so the plans screen paints
+ * in one pass. Change one, change the other.
+ */
+export const PLAN_PRICE_CENTS: Record<
+  PaidPlanId,
+  Record<BillingInterval, number>
+> = {
+  essencial: { monthly: 1999, annual: 19990 },
+  pro: { monthly: 4990, annual: 49900 },
+};
+
+/**
+ * A subscription's contribution to MONTHLY recurring revenue.
+ *
+ * An annual plan is divided by twelve rather than counted whole: MRR that jumps
+ * by R$ 499 in the month somebody renews and sits flat for eleven months after
+ * is not a rate, it is a cash-flow diary. Rounded to the centavo so the total
+ * stays an integer — floats accumulating over thousands of rows drift.
+ */
+export function monthlyRevenueCents(
+  plan: PaidPlanId,
+  interval: BillingInterval,
+): number {
+  const amount = PLAN_PRICE_CENTS[plan][interval];
+  return interval === "annual" ? Math.round(amount / 12) : amount;
+}
+
 const DEFAULT_CLIENT_URL = "http://localhost:5174";
 
 /**

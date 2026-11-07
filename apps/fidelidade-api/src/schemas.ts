@@ -616,3 +616,76 @@ export const mySubscriptionSchema = v.object({
 export const checkoutSessionSchema = v.object({ checkoutUrl: v.string() });
 
 export const portalSessionSchema = v.object({ portalUrl: v.string() });
+
+// ---------------------------------------------------------------------------
+// Platform administration
+// ---------------------------------------------------------------------------
+
+export const adminIdentitySchema = v.object({ email: v.string() });
+
+export const platformMetricsSchema = v.object({
+  timezone: v.string(),
+  accounts: v.number(),
+  stores: v.number(),
+  customers: v.number(),
+  stampsToday: v.number(),
+  stampsWeek: v.number(),
+  stampsMonth: v.number(),
+  mrrCents: v.number(),
+  payingAccounts: v.number(),
+  trialingAccounts: v.number(),
+  pastDueAccounts: v.number(),
+  paidConversion: v.number(),
+  churn30d: v.number(),
+  planBreakdown: v.array(
+    v.object({
+      plan: planIdSchema,
+      status: v.string(),
+      count: v.number(),
+    }),
+  ),
+});
+
+export const platformStampsByDaySchema = v.array(
+  v.object({ day: v.string(), count: v.number() }),
+);
+
+export const platformHealthSchema = v.object({
+  billingConfigured: v.boolean(),
+  lastStripeEventAt: v.nullable(v.date()),
+  lastStripeEventType: v.nullable(v.string()),
+  stripeEvents24h: v.array(
+    v.object({ eventType: v.string(), count: v.number() }),
+  ),
+  webhookFailures24h: v.number(),
+  recentWebhookFailures: v.array(
+    v.object({
+      id: v.string(),
+      eventId: v.nullable(v.string()),
+      eventType: v.nullable(v.string()),
+      reason: v.string(),
+      message: v.nullable(v.string()),
+      createdAt: v.date(),
+    }),
+  ),
+  lastMigrationHash: v.nullable(v.string()),
+  lastMigrationAt: v.nullable(v.date()),
+  databaseLatencyMs: v.number(),
+});
+
+/** No `ipAddress` and no `adminUserId` — see `listAuditLog` for why. */
+export const auditLogPageSchema = v.object({
+  entries: v.array(
+    v.object({
+      id: v.string(),
+      adminEmail: v.string(),
+      action: v.string(),
+      targetType: v.nullable(v.string()),
+      targetId: v.nullable(v.string()),
+      storeId: v.nullable(v.string()),
+      reason: v.nullable(v.string()),
+      createdAt: v.date(),
+    }),
+  ),
+  hasMore: v.boolean(),
+});

@@ -47,3 +47,11 @@ export function formatCurrency(valueInCents: number): string {
     currency: "BRL",
   }).format(valueInCents / 100);
 }
+
+/** 12,5% — recebe a razão (0..1), não o número já multiplicado. */
+export function formatPercent(ratio: number): string {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "percent",
+    maximumFractionDigits: 1,
+  }).format(ratio);
+}

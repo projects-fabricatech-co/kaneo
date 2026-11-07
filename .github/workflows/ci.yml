@@ -54,6 +54,34 @@ jobs:
       - name: Run unit tests
         run: pnpm test
 
+  typecheck:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10.32.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20.20.2
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Scoped to the Vale Desconto packages on purpose. `vite build` does not
+      # check types, so without this job a broken type ships with CI green --
+      # which is exactly how a console shipped navigating to routes that did
+      # not exist. Kaneo's own packages carry pre-existing type errors from
+      # upstream and would make this job red for reasons nobody here caused.
+      - name: Typecheck
+        run: pnpm --filter @fidelidade/api --filter @fidelidade/web typecheck
+
   build:
     runs-on: ubuntu-24.04
     steps:
