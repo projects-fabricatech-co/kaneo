@@ -24,8 +24,20 @@ type AdminShellProps = PropsWithChildren<{
  */
 const NAV = [
   { to: "/admin", label: copy.admin.navMetrics, icon: TrendingUp, exact: true },
-  { to: "/admin/saude", label: copy.admin.navHealth, icon: Activity },
-  { to: "/admin/auditoria", label: copy.admin.navAudit, icon: ScrollText },
+  {
+    to: "/admin/saude",
+    label: copy.admin.navHealth,
+    icon: Activity,
+    exact: false,
+  },
+  {
+    to: "/admin/auditoria",
+    label: copy.admin.navAudit,
+    icon: ScrollText,
+    // Every entry carries `exact`, even when false: with `as const`, an absent
+    // key makes the union members differ and `item.exact` stops type-checking.
+    exact: false,
+  },
 ] as const;
 
 export function AdminShell({ email, pathname, children }: AdminShellProps) {

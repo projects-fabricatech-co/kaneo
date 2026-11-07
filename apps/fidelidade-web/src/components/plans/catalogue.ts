@@ -65,3 +65,11 @@ export const PLAN_CATALOGUE: PlanOffer[] = [
     },
   },
 ];
+
+/**
+ * Display name for a plan id. Reads the catalogue above so the console and the
+ * plans screen cannot disagree about what "pro" is called.
+ */
+export function planName(id: string): string {
+  return PLAN_CATALOGUE.find((plan) => plan.id === id)?.name ?? id;
+}

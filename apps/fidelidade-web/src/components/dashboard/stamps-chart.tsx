@@ -12,14 +12,21 @@ export type StampsByDay = { day: string; count: number };
  * look like a busy one, so a zero-count day still renders as a visible baseline
  * sliver instead of nothing.
  */
-export function StampsChart({ days }: { days: StampsByDay[] }) {
+export function StampsChart({
+  days,
+  emptyLabel = copy.painel.chartEmpty,
+}: {
+  days: StampsByDay[];
+  /** The console says "no período"; the painel says "nos últimos 14 dias". */
+  emptyLabel?: string;
+}) {
   const peak = days.reduce((max, entry) => Math.max(max, entry.count), 0);
 
   if (days.length === 0 || peak === 0) {
     return (
       <Card>
         <CardContent className="py-6 text-center text-sm text-muted-foreground">
-          {copy.painel.chartEmpty}
+          {emptyLabel}
         </CardContent>
       </Card>
     );

@@ -290,6 +290,75 @@ describe("API integration: admin console", () => {
       expect(body.pastDueAccounts).toBe(1);
     });
 
+    it("does not count a Grátis account as paying, however active it is", async () => {
+      // `subscription-fields.ts` maps an unrecognised Stripe price to `gratis`
+      // while keeping the status Stripe sent, so a live subscription on a price
+      // missing from the price map lands here as (gratis, active). The same
+      // shape also arrives from the schema defaults. Either way it is not
+      // revenue: `sumMrrCents` skips it by plan, so counting it by status alone
+      // made the MRR tile and the "pagando" tile beside it disagree.
+      const paying = await createUser();
+      await grantPlan(paying.id, "essencial", {
+        status: "active",
+        billingInterval: "monthly",
+      });
+
+      const unknownPrice = await createUser();
+      await grantPlan(unknownPrice.id, "gratis", { status: "active" });
+
+      const alsoFree = await createUser();
+      await grantPlan(alsoFree.id, "gratis", { status: "active" });
+
+      const admin = await createPlatformAdmin();
+      mockAuthenticatedSession(admin);
+      const { app } = createApp();
+
+      const response = await app.request("/api/admin/metrics");
+      const body = (await response.json()) as {
+        mrrCents: number;
+        payingAccounts: number;
+        paidConversion: number;
+      };
+
+      expect(body.payingAccounts).toBe(1);
+      expect(body.mrrCents).toBe(1999);
+
+      // Four accounts exist: the three above plus the admin. Exactly one pays.
+      expect(body.paidConversion).toBeCloseTo(1 / 4, 10);
+    });
+
+    it("counts only paid plans as churn", async () => {
+      const paying = await createUser();
+      await grantPlan(paying.id, "pro", {
+        status: "active",
+        billingInterval: "monthly",
+      });
+
+      const churned = await createUser();
+      await grantPlan(churned.id, "essencial", {
+        status: "canceled",
+        billingInterval: "monthly",
+        canceledAt: new Date(),
+      });
+
+      // A free account that went away is not lost revenue.
+      const freeGone = await createUser();
+      await grantPlan(freeGone.id, "gratis", {
+        status: "canceled",
+        canceledAt: new Date(),
+      });
+
+      const admin = await createPlatformAdmin();
+      mockAuthenticatedSession(admin);
+      const { app } = createApp();
+
+      const response = await app.request("/api/admin/metrics");
+      const body = (await response.json()) as { churn30d: number };
+
+      // One cancellation over one paying plus one cancelled.
+      expect(body.churn30d).toBeCloseTo(1 / 2, 10);
+    });
+
     it("renders zero rather than NaN on an empty platform", async () => {
       const admin = await createPlatformAdmin();
       mockAuthenticatedSession(admin);

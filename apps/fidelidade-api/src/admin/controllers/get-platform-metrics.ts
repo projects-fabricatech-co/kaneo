@@ -1,4 +1,4 @@
-import { and, eq, gte, isNull, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, sql } from "drizzle-orm";
 import {
   type BillingInterval,
   monthlyRevenueCents,
@@ -28,6 +28,19 @@ export const PLATFORM_TIMEZONE = "America/Sao_Paulo";
 
 /** Stripe statuses that are actually paying right now. */
 const PAYING_STATUS = "active";
+
+/**
+ * Only a PAID plan can be counted as paying, trialing, past due or churned.
+ *
+ * A Grátis account also has a `subscriptions` row, and its status is `active` —
+ * that is the schema default, and it is correct: the account is live. But
+ * `status = 'active'` alone therefore matches every free account, so without
+ * this filter `payingAccounts` counts the whole platform and `paidConversion`
+ * walks towards 100% the more free signups arrive. `sumMrrCents` already
+ * filters by plan, which is why MRR stayed right while the headcount beside it
+ * did not — the pair disagreeing is how this was spotted.
+ */
+const onPaidPlan = inArray(subscriptionTable.plan, PAID_PLAN_IDS);
 
 export type PlanBreakdownRow = {
   plan: PlanId;
@@ -182,17 +195,17 @@ async function getPlatformMetrics(): Promise<PlatformMetrics> {
   const payingAccounts = db
     .select({ value: countAll })
     .from(subscriptionTable)
-    .where(eq(subscriptionTable.status, PAYING_STATUS));
+    .where(and(onPaidPlan, eq(subscriptionTable.status, PAYING_STATUS)));
 
   const trialingAccounts = db
     .select({ value: countAll })
     .from(subscriptionTable)
-    .where(eq(subscriptionTable.status, "trialing"));
+    .where(and(onPaidPlan, eq(subscriptionTable.status, "trialing")));
 
   const pastDueAccounts = db
     .select({ value: countAll })
     .from(subscriptionTable)
-    .where(eq(subscriptionTable.status, "past_due"));
+    .where(and(onPaidPlan, eq(subscriptionTable.status, "past_due")));
 
   // Cancellations in the trailing 30 days. `canceled_at` and not the status,
   // because a row that cancelled and then resubscribed still happened.
@@ -201,6 +214,7 @@ async function getPlatformMetrics(): Promise<PlatformMetrics> {
     .from(subscriptionTable)
     .where(
       and(
+        onPaidPlan,
         sql`${subscriptionTable.canceledAt} is not null`,
         gte(subscriptionTable.canceledAt, sql`now() - interval '30 days'`),
       ),
